@@ -26,12 +26,37 @@
         .logo-text { display: block; font-size: 1rem; color: #ffca28; margin-top: 5px; }
 
         .header-top {
-            width: 100%; display: flex; justify-content: space-around; 
-            padding: 5px 0; background: rgba(0,0,0,0.3); font-size: 1.8rem; color: #ffffff;
-                     backdrop-filter: blur(8px); 
-                     -webkit-backdrop-filter: blur(12px); /* لدعم متصفحات آبل */
+            width: 100%; 
+            display: flex; 
+            justify-content: space-around; 
+            align-items: center; /* لضمان توسط العناصر عمودياً */
+              padding: 15px 0; 
+            font-size: 1.8rem; 
+            color: #ffffff;
+    
+            /* إلغاء الخلفية القديمة */
+            background: transparent; 
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
 
-             }
+            /* إضافة الخط المتلاشي في الأسفل */
+            position: relative;
+        }
+
+        .header-top::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 5%; /* يبدأ بعد مسافة بسيطة من اليسار */
+              width: 90%; /* طول الخط (يمكنك زيادته أو نقصانه) */
+               height: 2px; /* سماكة الخط */
+    
+            /* التدرج اللوني: شفاف -> أبيض (أو ذهبي) -> شفاف */
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.5), transparent);
+    
+            /* اختياري: إضافة توهج بسيط للخط ليناسب أجواء المسجد */
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.0);
+        }
 
              .date-column{
                   display:flex;
@@ -160,7 +185,7 @@
         .iqama-blink { animation: blinker 2.8s infinite; }
         @keyframes blinker { 
             50% { background-color: rgba(1, 0, 0, 0.5); } 
-        } /* تأكد من وجود هذا القوس */
+        } 
 
         /* صورة أسفل منتصف الشاشة */
         .bottom-center-logo {
