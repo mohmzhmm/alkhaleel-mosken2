@@ -31,19 +31,29 @@
                      backdrop-filter: blur(8px); 
                      -webkit-backdrop-filter: blur(12px); /* لدعم متصفحات آبل */
 
-        /* تكبير الساعة */
-        #clock{
-            font-size: 4rem;
-            font-weight: 700;
-        }
-        /* تصغير التاريخ */
-        #date-ar,
-        #date-en{
-            font-size: 1.8rem;
-            opacity: 0.9;
-        }
+             }
 
-        }
+             .date-column{
+                  display:flex;
+                  flex-direction:column;
+                  align-items:center;
+      
+             }
+
+              /* تكبير الساعة */
+             #clock{
+                  font-size: 4rem;
+                  font-weight: 700;
+                     text-align: center;
+             }
+
+              /* تصغير التاريخ */
+             #date-ar,
+             #date-se{
+                 font-size: 1.6rem;
+                 opacity: 0.9;
+
+             }
         /* حاوية المربعات الرئيسية */
               .prayer-cards-container {
             display: flex;
@@ -52,7 +62,7 @@
             flex-wrap: nowrap;
             margin: 30px auto;
             width: 95%;
-    }
+             }
 
         /* تصميم المربع الواحد */
               .prayer-card {
@@ -91,7 +101,7 @@
           border: 2px solid #ffca28 !important;
           box-shadow: 0 0 25px rgba(255, 202, 40, 0.5);
           transform: translateY(-10px); /* يرتفع قليلاً للأعلى */
-                  background: rgba(40, 50, 55, 0.6) !important;
+                  background: rgba(40, 50, 55, 0.7) !important;
     }
 
        
@@ -179,6 +189,9 @@
             width: 250px;
             height: auto;
             filter: drop-shadow(0 0 10px rgba(0,0,0,1.5));
+
+
+
         }
     </style>
 </head>
@@ -191,11 +204,18 @@
     </div>
 
     <div class="header-top">
-        <div id="date-ar">---</div>
-        <div class="current-time-large" id="clock">00:00</div>
-        <div id="date-en">---</div>
-    </div>
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <div id="date-ar">---</div>
+            <div id="date-hijri" style="font-size: 1.4rem; color: #ffca28; margin-top: 5px;">---</div>
+        </div>
 
+        <div class="current-time-large" id="clock">00:00</div>
+
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <div id="date-se">---</div>
+            <div id="date-hijri-se" style="font-size: 1.4rem; color: #ffca28;">---</div>
+        </div>
+    </div>
     <div class="countdown-container" id="timer-box">
         <div id="timer-label" style="font-size: 1.8rem; color: #ccc; text-align: center;">
             المتبقي للأذان <span class="swedish-text">Tid till Adhan</span>
@@ -213,6 +233,15 @@
                     <span class="iqama-time" id="fajr-iqama">--:--</span>
                 </div>
             </div>
+
+            <div class="prayer-card" id="card-Shuruq">
+                <div class="prayer-name">الشروق</div>
+                <div class="swedish-name">Shuruq</div>
+                <div class="prayer-time" id="shuruq-time">--:--</div>
+                <div class="">
+                </div>
+            </div>
+
 
             <div class="prayer-card" id="card-duhur">
                 <div class="prayer-name">الظهر</div>
@@ -268,6 +297,7 @@
        </div>
 
     <script>
+
         // البيانات كما قدمتها مع تصحيح علامات التنصيص
         const prayerData = [
             {
@@ -3624,6 +3654,7 @@
         const iqamaOffsets = { Fajr: 10, Duhur: 10, Asr: 10, Maghrib: 5, Ishâ: 10 };
         const labels = { 
             Fajr: { ar: "الفجر", sv: "Fajr" }, 
+                      Shuruq: {ar:"الشروق", sv:"Shuruq"},
             Duhur: { ar: "الظهر", sv: "Duhur" },
             Asr: { ar: "العصر", sv: "Asr" },
                       Maghrib: { ar: "المغرب", sv: "Maghrib" },
@@ -3634,10 +3665,25 @@
 
         function updateClock() {
             const now = new Date();
+
+            // 1. الوقت الحالي
             document.getElementById('clock').innerText = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
-            const optionsAr = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('date-ar').innerText = now.toLocaleDateString('ar-EG-u-nu-latn', optionsAr);
-            document.getElementById('date-en').innerText = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+            // 2. التاريخ الميلادي العربي والهجري العربي (الجهة اليمنى)
+                const optionsAr = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+                document.getElementById('date-ar').innerText = now.toLocaleDateString('ar-EG', optionsAr);
+    
+                const hijriOptionsAr = { calendar: 'islamic-umalqura', day: 'numeric', month: 'long', year: 'numeric' };
+                document.getElementById('date-hijri').innerText = now.toLocaleDateString('ar-SA-u-nu-latn', hijriOptionsAr);
+
+            // 3. التاريخ الميلادي السويدي (الجهة اليسرى)
+            let swedishDate = now.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('date-se').innerText = swedishDate.charAt(0).toUpperCase() + swedishDate.slice(1);
+
+            // 4. التاريخ الهجري باللغة السويدية (الجهة اليسرى تحت السويدي)
+            const hijriOptionsSe = { calendar: 'islamic-umalqura', day: 'numeric', month: 'long', year: 'numeric' };
+            let hijriSe = now.toLocaleDateString('sv-SE', hijriOptionsSe);
+            document.getElementById('date-hijri-se').innerText = hijriSe.charAt(0).toUpperCase() + hijriSe.slice(1);
         }
 
         // دالة لتحويل النص "12:09" وتاريخ "2026-02-16" إلى كائن وقت حقيقي
@@ -3707,6 +3753,7 @@
             let todayData = getTodayData();
             if (!todayData) return;
 
+
             const prayers = [
                 {n: labels.Fajr.ar, t: todayData.Fajr, i: iqamaOffsets.Fajr, sv: labels.Fajr.sv, data: todayData},
                 {n: labels.Duhur.ar, t: todayData.Duhur, i: iqamaOffsets.Duhur, sv: labels.Duhur.sv, data: todayData},
@@ -3758,7 +3805,4 @@
         updateClock(); updateTimer(); renderTable();
     </script>
 </body>
-
 </html>
-
-
