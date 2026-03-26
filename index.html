@@ -5,6 +5,7 @@
     <title>مواقيت مسجد الخليل</title>
     <style>
         body { 
+
             margin: 0; padding: 0; 
             background: url('3.png') no-repeat center center fixed;
                       background-size: cover;
@@ -19,14 +20,85 @@
             flex-direction: column; justify-content: center; align-items: center; text-align: center;
         }
 
-        .logo-container {
-            position: fixed; bottom: 40px; right: 60px; text-align: center; z-index: 10;
+        .logo-img { width: 200px; filter: drop-shadow(0 0 10px rgba(0,0,0,1.5)); }
+        .top-left-logo {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 10;
         }
-        .logo-img { width: 250px; filter: drop-shadow(0 0 10px rgba(0,0,0,1.5)); }
+        .top-left-logo img {
+            width: 200px;
+            height: auto;
+            filter: drop-shadow(0 0 8px rgba(0,0,0,0.7));
+        }
+        /* حاوية المربعات الرئيسية */
+        .cards-and-side {
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 15px;
+            margin: 15px auto;
+            width: 50%;
+        }
+        /* كارتين النص الجانبي - ثابت على اليسار */
+        .left-side-cards {
+            position: fixed;
+            left: 60px;
+            display: flex;
+            flex-direction: column;
+            width: 450px;
+            gap: 30px;
+        }
+        .left-side-cards .prayer-card {
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+            padding: 15px 12px;
+            text-align: center;
+            font-size: 1.2rem;
+            line-height: 1.7;
+            color: #fff;
+        }
+
+        /* كارت الصور الجانبي - ثابت على اليمين */
+        .right-side-images {
+            position: fixed;
+            right: 60px;
+            display: flex;
+            flex-direction: column;
+            width: 450px;
+        }
+        .right-side-images .prayer-card {
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            gap: 10px;
+        }
+        .right-side-images img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
         .logo-text { display: block; font-size: 1rem; color: #ffca28; margin-top: 5px; }
+        .timer-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            width: 50%;
+        }
+        .timer-side-img {
+            width: 180px;
+            height: auto;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));
+            flex-shrink: 0;
+        }
 
         .header-top {
-            width: 100%; 
+            width: 90%; 
             display: flex; 
             justify-content: space-around; 
             align-items: center; /* لضمان توسط العناصر عمودياً */
@@ -80,14 +152,21 @@
 
              }
         /* حاوية المربعات الرئيسية */
-              .prayer-cards-container {
+        .prayer-cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+        .prayer-row {
             display: flex;
             justify-content: center;
             gap: 15px;
-            flex-wrap: nowrap;
-            margin: 30px auto;
-            width: 95%;
-             }
+            width: 100%;
+        }
+        .prayer-row .prayer-card {
+            flex: 1;
+        }
 
         /* تصميم المربع الواحد */
               .prayer-card {
@@ -203,24 +282,57 @@
             filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
         } /* تأكد من وجود هذا القوس */
 
-        /* صورة أسفل يسار الشاشة */
-        .bottom-left-logo {
+        /* صورة أسفل يسار الشاشة - محذوف */
+
+        /* ===== شريط الإعلانات ===== */
+        .ticker-bar {
             position: fixed;
-            bottom: 40px;
-            left: 60px;
-            z-index: 5;
+            bottom: 0; left: 0;
+            width: 100%;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255,255,255,0.3);
+            display: flex; flex-direction: column;
+            overflow: hidden; z-index: 50;
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.2);
         }
-        .bottom-left-logo img {
-            width: 250px;
-            height: auto;
-            filter: drop-shadow(0 0 10px rgba(0,0,0,1.5));
-
-
-
+        .ticker-row {
+            display: flex; align-items: center;
+            height: 80px; overflow: hidden;
         }
+        .ticker-row:first-child { border-bottom: 1px solid rgba(255,255,255,0.15); }
+        .ticker-label {
+            flex-shrink: 0;
+            background: rgba(255,202,40,0.85);
+            color: #1a1a1a; font-weight: bold;
+            font-size: 1.1rem; padding: 0 20px;
+            height: 100%; display: flex; align-items: center;
+            white-space: nowrap; min-width: 110px; justify-content: center;
+        }
+        .ticker-track {
+            flex: 1; overflow: hidden;
+            position: relative; height: 80px;
+        }
+        .ticker-inner {
+            position: absolute; top: 0; left: 0;
+            white-space: nowrap; font-size: 2rem;
+            line-height: 80px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            will-change: transform;
+        }
+
+        /* رفع العناصر الثابتة */
+        .logo-container     { bottom: 120px !important; }
+        .bottom-center-logo { bottom: 120px !important; }
+        .bottom-left-logo   { bottom: 120px !important; }
     </style>
 </head>
 <body>
+
+    <div class="top-left-logo">
+        <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
+    </div>
 
     <div id="prayer-overlay">
         <h1 style="font-size: 6rem; margin: 0; text-align: center;">أقيمت الصلاة</h1>
@@ -241,85 +353,154 @@
             <div id="date-hijri-se" style="font-size: 1.4rem; color: #ffca28;">---</div>
         </div>
     </div>
-    <div class="countdown-container" id="timer-box">
-        <div id="timer-label" style="font-size: 1.8rem; color: #ccc; text-align: center;">
-            المتبقي للأذان <span class="swedish-text">Tid till Adhan</span>
+    <div class="timer-wrapper">
+
+        <div class="countdown-container" id="timer-box" style="margin-top:0; flex:1;">
+            <div id="timer-label" style="font-size: 1.8rem; color: #ccc; text-align: center;">
+                المتبقي للأذان <span class="swedish-text">Tid till Adhan</span>
+            </div>
+            <div class="countdown-time" id="timer">00:00:00</div>
+            <div id="timer-prayer-name" style="font-size: 3rem; text-align: center;">---</div>
         </div>
-        <div class="countdown-time" id="timer">00:00:00</div>
-        <div id="timer-prayer-name" style="font-size: 3rem; text-align: center;">---</div>
+
+
     </div>
-    <div class="prayer-cards-container" id="prayer-cards">
-            <div class="prayer-card" id="card-fajr">
-                <div class="prayer-name">الفجر</div>
-                <div class="swedish-name">Fajr</div>
-                <div class="prayer-time" id="fajr-time">--:--</div>
-                <div class="iqama-box">
-                    <span class="iqama-label">الإقامة Iqama</span>
-                    <span class="iqama-time" id="fajr-iqama">--:--</span>
+    <div class="cards-and-side">
+        <div class="prayer-cards-container" id="prayer-cards">
+            <!-- الصف الأول: الفجر، الشروق، الظهر -->
+            <div class="prayer-row">
+                <div class="prayer-card" id="card-fajr">
+                    <div class="prayer-name">الفجر</div>
+                    <div class="swedish-name">Fajr</div>
+                    <div class="prayer-time" id="fajr-time">--:--</div>
+                    <div class="iqama-box">
+                        <span class="iqama-label">الإقامة Iqama</span>
+                        <span class="iqama-time" id="fajr-iqama">--:--</span>
+                    </div>
+                </div>
+                <div class="prayer-card" id="card-Shuruq">
+                    <div class="prayer-name">الشروق</div>
+                    <div class="swedish-name">Shuruq</div>
+                    <div class="prayer-time" id="shuruq-time">--:--</div>
+                </div>
+                <div class="prayer-card" id="card-duhur">
+                    <div class="prayer-name">الظهر</div>
+                    <div class="swedish-name">Duhur</div>
+                    <div class="prayer-time" id="duhur-time">--:--</div>
+                    <div class="iqama-box">
+                        <span class="iqama-label">الإقامة Iqama</span>
+                        <span class="iqama-time" id="duhur-iqama">--:--</span>
+                    </div>
                 </div>
             </div>
-
-            <div class="prayer-card" id="card-Shuruq">
-                <div class="prayer-name">الشروق</div>
-                <div class="swedish-name">Shuruq</div>
-                <div class="prayer-time" id="shuruq-time">--:--</div>
-                <div class="">
+            <!-- الصف الثاني: العصر، المغرب، العشاء -->
+            <div class="prayer-row">
+                <div class="prayer-card" id="card-asr">
+                    <div class="prayer-name">العصر</div>
+                    <div class="swedish-name">Asr</div>
+                    <div class="prayer-time" id="asr-time">--:--</div>
+                    <div class="iqama-box">
+                        <span class="iqama-label">الإقامة Iqama</span>
+                        <span class="iqama-time" id="asr-iqama">--:--</span>
+                    </div>
                 </div>
-            </div>
-
-
-            <div class="prayer-card" id="card-duhur">
-                <div class="prayer-name">الظهر</div>
-                <div class="swedish-name">Duhur</div>
-                <div class="prayer-time" id="duhur-time">--:--</div>
-                <div class="iqama-box">
-                    <span class="iqama-label">الإقامة Iqama</span>
-                    <span class="iqama-time" id="duhur-iqama">--:--</span>
+                <div class="prayer-card" id="card-maghrib">
+                    <div class="prayer-name">المغرب</div>
+                    <div class="swedish-name">Maghrib</div>
+                    <div class="prayer-time" id="maghrib-time">--:--</div>
+                    <div class="iqama-box">
+                        <span class="iqama-label">الإقامة Iqama</span>
+                        <span class="iqama-time" id="maghrib-iqama">--:--</span>
+                    </div>
                 </div>
-            </div>
-
-            <div class="prayer-card" id="card-asr">
-               <div class="prayer-name">العصر</div>
-               <div class="swedish-name">Asr</div>
-               <div class="prayer-time" id="asr-time">--:--</div>
-               <div class="iqama-box">
-                    <span class="iqama-label">الإقامة Iqama</span>
-                    <span class="iqama-time" id="asr-iqama">--:--</span>
-                </div>
-            </div>
-
-            <div class="prayer-card" id="card-maghrib">
-                <div class="prayer-name">المغرب</div>
-                <div class="swedish-name">Maghrib</div>
-                <div class="prayer-time" id="maghrib-time">--:--</div>
-                <div class="iqama-box">
-                    <span class="iqama-label">الإقامة Iqama</span>
-                    <span class="iqama-time" id="maghrib-iqama">--:--</span>
-                </div>
-            </div>
-
-            <div class="prayer-card" id="card-ishâ">
-                <div class="prayer-name">العشاء</div>
-                <div class="swedish-name">Ishâ</div>
-                <div class="prayer-time" id="ishâ-time">--:--</div>
-                <div class="iqama-box">
-                    <span class="iqama-label">الإقامة Iqama</span>
-                    <span class="iqama-time" id="ishâ-iqama">--:--</span>
+                <div class="prayer-card" id="card-ishâ">
+                    <div class="prayer-name">العشاء</div>
+                    <div class="swedish-name">Ishâ</div>
+                    <div class="prayer-time" id="ishâ-time">--:--</div>
+                    <div class="iqama-box">
+                        <span class="iqama-label">الإقامة Iqama</span>
+                        <span class="iqama-time" id="ishâ-iqama">--:--</span>
+                    </div>
                 </div>
             </div>
         </div>
-    
-    <div class="logo-container">
-        <img src="logo.png" class="logo-img" onerror="this.style.display='none'">
-        <span class="logo-text"></span>
     </div>
-       <div class="bottom-center-logo">
-        <img src="4.png" alt="Logo">
+    <!-- كارتين النص على اليسار -->
+    <div class="left-side-cards" id="left-cards">
+        <div class="prayer-card" id="left-card-top">
+            <p style="margin:0; white-space:pre-line;">السلام عليكم ورحمة الله وبركاته
+نذكّركم أيها الإخوة الكرام بدرس هذا اليوم بعد صلاة العصر إن شاء الله.
+عنوان الدرس:
+<strong style="color:#ffca28;">إشارات تربوية</strong>
+ضمن قراءة كتاب:
+<span style="color:#ffca28;">(تهذيب شرح تسهيل العقيدة الإسلامية)</span></p>
+        </div>
+        <div class="prayer-card" id="left-card-bottom" style="font-size:1.2rem; direction:ltr; text-align:left;">
+            <p style="margin:0; white-space:pre-line;">Vi påminner er, kära bröder, om dagens lektion efter Tarawih-bönen, om Allah vill.
+Lektionens titel:
+<strong style="color:#ffca28;">Pedagogiska vägledningar</strong>
+Ur boken:
+<span style="color:#ffca28;">(Förkortning av förklaringen till &ldquo;Att underlätta den islamiska trosläran&rdquo;)</span></p>
+        </div>
     </div>
 
-       <div class="bottom-left-logo">
-    <img src="5.png" alt="Left Logo">
-       </div>
+    <!-- كارت الصور الجانبي المستقل -->
+    <div class="right-side-images" id="right-img-card">
+        <div class="prayer-card" style="flex:1; justify-content:center; align-items:center; padding:15px; gap:10px;">
+            <img src="4.png" alt="4" onerror="this.style.display='none'">
+            <img src="5.png" alt="5" onerror="this.style.display='none'">
+        </div>
+    </div>
+
+    <!-- ===== شريط الإعلانات ===== -->
+    <div class="ticker-bar">
+        <div class="ticker-row">
+            <div class="ticker-label">الأربعون النووية</div>
+            <div class="ticker-track" id="track-ar">
+                <div class="ticker-inner" id="ticker-ar" style="color:#fff;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== شريط الإعلانات =====
+        var arText = 'الأربعون النووية  |  ﷽  |  الحديث الأول: عَنْ أَمِيرِ المُؤْمِنِينَ أَبِي حَفْصٍ عُمَرَ بْنِ الخَطّابِ (رضي الله عنه): «إنَّما الأَعْمالُ بِالنِّيّاتِ، وَإِنَّما لِكُلِّ امْرِئٍ ما نَوَى»  |  الحديث الثاني: «الإِسْلامُ أَنْ تَشْهَدَ أَنْ لا إلَهَ إلّا اللَّهُ وَأَنَّ مُحَمَّدًا رَسُولُ اللَّهِ، وَتُقِيمَ الصَّلاةَ، وَتُؤْتِيَ الزَّكاةَ، وَتَصُومَ رَمَضانَ، وَتَحُجَّ البَيْتَ»  |  الحديث الثالث: «بُنِيَ الإِسْلامُ عَلَى خَمْسٍ»  |  الحديث الرابع: «إنَّ أَحَدَكُمْ يُجْمَعُ خَلْقُهُ فِي بَطْنِ أُمِّهِ أَرْبَعِينَ يَوْمًا نُطْفَةً»  |  الحديث الخامس: «مَنْ أَحْدَثَ فِي أَمْرِنا هَذا ما لَيْسَ مِنْهُ فَهُوَ رَدٌّ»  |  الحديث السادس: «إنَّ الحَلالَ بَيِّنٌ، وَإِنَّ الحَرامَ بَيِّنٌ، وَبَيْنَهُما أُمُورٌ مُشْتَبِهاتٌ»  |  الحديث السابع: «الدِّينُ النَّصِيحَةُ»  |  الحديث الثامن: «أُمِرْت أَنْ أُقاتِلَ النّاسَ حَتَّى يَشْهَدُوا أَنْ لا إلَهَ إلّا اللَّهُ»  |  الحديث التاسع: «ما نَهَيْتُكُمْ عَنْهُ فاجْتَنِبُوهُ، وَما أَمَرْتُكُمْ بِهِ فَأْتُوا مِنْهُ ما اسْتَطَعْتُمْ»  |  الحديث العاشر: «إنَّ اللَّهَ طَيِّبٌ لا يَقْبَلُ إلّا طَيِّبًا»  |  الحديث الحادي عشر: «دَعْ ما يُرِيبُك إلَى ما لا يُرِيبُك»  |  الحديث الثاني عشر: «مِنْ حُسْنِ إسْلامِ المَرْءِ تَرْكُهُ ما لا يَعْنِيهِ»  |  الحديث الثالث عشر: «لا يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لِأَخِيهِ ما يُحِبُّ لِنَفْسِهِ»  |  الحديث الرابع عشر: «لا يَحِلُّ دَمُ امْرِئٍ مُسْلِمٍ إلّا بِإِحْدَى ثَلاثٍ»  |  الحديث الخامس عشر: «مَنْ كانَ يُؤْمِنُ بِاَللَّهِ والْيَوْمِ الآخِرِ فَلْيَقُلْ خَيْرًا أَوْ لِيَصْمُتْ»  |  الحديث السادس عشر: «لا تَغْضَبْ»  |  الحديث السابع عشر: «إنَّ اللَّهَ كَتَبَ الإِحْسانَ عَلَى كُلِّ شَيْءٍ»  |  الحديث الثامن عشر: «اتَّقِ اللَّهَ حَيْثُما كُنْت، وَأَتْبِعْ السَّيِّئَةَ الحَسَنَةَ تَمْحُها»  |  الحديث التاسع عشر: «احْفَظْ اللَّهَ يَحْفَظْك، احْفَظْ اللَّهَ تَجِدْهُ تُجاهَك»  |  الحديث العشرون: «إذا لَمْ تَسْتَحِ فاصْنَعْ ما شِئْت»  |  الحديث الحادي والعشرون: «قُلْ: آمَنْت بِاَللَّهِ ثُمَّ اسْتَقِمْ»  |  الحديث الثاني والعشرون: «أَرَأَيْت إذا صَلَّيْت المَكْتُوباتِ... أَأَدْخُلُ الجَنَّةَ؟ قالَ: نَعَمْ»  |  الحديث الثالث والعشرون: «الطَّهُورُ شَطْرُ الإِيمانِ، والصَّلاةُ نُورٌ، والصَّدَقَةُ بُرْهانٌ»  |  الحديث الرابع والعشرون: «يا عِبادِي! إنَّكُمْ تُخْطِئُونَ بِاللَّيْلِ والنَّهارِ، وَأَنا أَغْفِرُ الذُّنُوبَ جَمِيعًا»  |  الحديث الخامس والعشرون: «إنَّ بِكُلِّ تَسْبِيحَةٍ صَدَقَةً، وَكُلِّ تَكْبِيرَةٍ صَدَقَةً»  |  الحديث السادس والعشرون: «الْكَلِمَةُ الطَّيِّبَةُ صَدَقَةٌ»  |  الحديث السابع والعشرون: «الْبِرُّ حُسْنُ الخُلُقِ»  |  الحديث الثامن والعشرون: «فَإِنَّ كُلَّ بِدْعَةٍ ضَلالَةٌ»  |  الحديث التاسع والعشرون: «رَأْسُ الأَمْرِ الإِسْلامُ، وَعَمُودُهُ الصَّلاةُ، وَذُرْوَةُ سَنامِهِ الجِهادُ»  |  الحديث الثلاثون: «إنَّ اللَّهَ فَرَضَ فَرائِضَ فَلا تُضَيِّعُوها»  |  الحديث الحادي والثلاثون: «ازْهَدْ فِي الدُّنْيا يُحِبُّك اللَّهُ»  |  الحديث الثاني والثلاثون: «لا ضَرَرَ وَلا ضِرارَ»  |  الحديث الثالث والثلاثون: «البَيِّنَةُ عَلَى المُدَّعِي، والْيَمِينُ عَلَى مَنْ أَنْكَرَ»  |  الحديث الرابع والثلاثون: «مَنْ رَأَى مِنْكُمْ مُنْكَرًا فَلْيُغَيِّرْهُ بِيَدِهِ»  |  الحديث الخامس والثلاثون: «المُسْلِمُ أَخُو المُسْلِمِ، لا يَظْلِمُهُ، وَلا يَخْذُلُهُ»  |  الحديث السادس والثلاثون: «مَنْ نَفَّسَ عَنْ مُؤْمِنٍ كُرْبَةً نَفَّسَ اللَّهُ عَنْهُ كُرْبَةً مِنْ كُرَبِ يَوْمِ القِيامَةِ»  |  الحديث السابع والثلاثون: «مَنْ هَمَّ بِحَسَنَةٍ فَعَمِلَها كَتَبَها اللَّهُ عَشْرَ حَسَناتٍ»  |  الحديث الثامن والثلاثون: «مَنْ عادَى لِي وَلِيًّا فَقْد آذَنْتهُ بِالْحَرْبِ»  |  الحديث التاسع والثلاثون: «إنَّ اللَّهَ تَجاوَزَ عَنْ أُمَّتِي الخَطَأَ والنِّسْيانَ»  |  الحديث الأربعون: «كُنْ فِي الدُّنْيا كَأَنَّك غَرِيبٌ أَوْ عابِرُ سَبِيلٍ»  |  الحديث الحادي والأربعون: «لا يُؤْمِنُ أَحَدُكُمْ حَتَّى يَكُونَ هَواهُ تَبَعًا لِما جِئْتُ بِهِ»  |  الحديث الثاني والأربعون: «يا ابْنَ آدَمَ! إِنَّكَ ما دَعَوْتنِي وَرَجَوْتنِي غَفَرْتُ لَك»  |  الحديث الثالث والأربعون: «أَلْحِقُوا الفَرائِضَ بِأَهْلِها»  |  الحديث الرابع والأربعون: «الرَّضاعَةُ تُحَرِّمُ ما تُحَرِّمُ الوِلادَةُ»  |  الحديث الخامس والأربعون: «إِنَّ اللَّهَ وَرَسُولَهُ حَرَّمَ بَيْعَ الخَمْرِ والْمَيْتَةِ والْخِنْزِيرِ»  |  الحديث السادس والأربعون: «كُلُّ مُسْكِرٍ حَرام»  |  الحديث السابع والأربعون: «فَثُلُثٌ لِطَعامِهِ، وَثُلُثٌ لِشَرابِهِ، وَثُلُثٌ لِنَفَسِهِ»  |  الحديث الثامن والأربعون: «مَنْ إِذا حَدَّثَ كَذَبَ، وإِذا وَعَدَ أَخْلَفَ»  |  الحديث التاسع والأربعون: «لَوْ تَوَكَّلُونَ عَلَى اللَّهِ حَقَّ تَوَكُّلِهِ لَرَزَقَكُمْ»  |  الحديث الخمسون: «لا يَزالُ لِسانُكَ رَطْبًا مِنْ ذِكْرِ اللَّهِ»  |  إعداد: تكوين الراسخين       ';
+        var svText = 'Vi påminner er, kära bröder, om dagens lektion efter Isha-bönen, om Allah vill  |  Lektionens titel: Pedagogiska vägledningar  |  Ur boken: Förkortning av förklaringen till Att underlätta den islamiska troäran       ';
+
+        function startTicker(elId, text, speed, dir) {
+            var el = document.getElementById(elId);
+            if (!el) return;
+            el.textContent = text + text;
+            var pos = dir === 'ltr' ? 0 : 0;
+            var half = 0;
+
+            function measure() {
+                half = el.scrollWidth / 2;
+                if (half === 0) { setTimeout(measure, 100); return; }
+                pos = dir === 'ltr' ? -half : 0;
+                tick();
+            }
+
+            function tick() {
+                if (dir === 'ltr') {
+                    pos += speed;
+                    if (pos >= 0) pos = -half;
+                } else {
+                    pos -= speed;
+                    if (pos <= -half) pos = 0;
+                }
+                el.style.transform = 'translateX(' + pos + 'px)';
+                requestAnimationFrame(tick);
+            }
+
+            measure();
+        }
+
+        window.addEventListener('load', function() {
+            startTicker('ticker-ar', arText, 1, 'ltr');
+            startTicker('ticker-sv', svText, 1.5, 'rtl');
+        });
+    </script>
 
     <script>
 
@@ -3828,6 +4009,49 @@
 
         setInterval(() => { updateClock(); updateTimer(); renderTable(); }, 1000);
         updateClock(); updateTimer(); renderTable();
+
+        // ضبط موضع وارتفاع كارت الصور ليساوي: المؤقت + الفجر + العصر
+        function positionRightCard() {
+            const timerBox = document.getElementById('timer-box');
+            const cardFajr  = document.getElementById('card-fajr');
+            const cardAsr   = document.getElementById('card-asr');
+            const rightCard = document.getElementById('right-img-card');
+            if (!timerBox || !cardFajr || !cardAsr || !rightCard) return;
+
+            const tRect = timerBox.getBoundingClientRect();
+            const fRect = cardFajr.getBoundingClientRect();
+            const aRect = cardAsr.getBoundingClientRect();
+
+            const top    = tRect.top + window.scrollY;
+            const bottom = aRect.bottom + window.scrollY;
+            const height = bottom - top;
+
+            rightCard.style.top    = top + 'px';
+            rightCard.style.height = height + 'px';
+        }
+
+        positionRightCard();
+        window.addEventListener('resize', positionRightCard);
+
+        // ضبط موضع وارتفاع كارتي اليسار
+        function positionLeftCards() {
+            const timerBox   = document.getElementById('timer-box');
+            const cardAsr    = document.getElementById('card-asr');
+            const leftCards  = document.getElementById('left-cards');
+            if (!timerBox || !cardAsr || !leftCards) return;
+
+            const tRect = timerBox.getBoundingClientRect();
+            const aRect = cardAsr.getBoundingClientRect();
+
+            const top    = tRect.top + window.scrollY;
+            const height = (aRect.bottom + window.scrollY) - top;
+
+            leftCards.style.top    = top + 'px';
+            leftCards.style.height = height + 'px';
+        }
+
+        positionLeftCards();
+        window.addEventListener('resize', positionLeftCards);
     </script>
 </body>
 </html>
