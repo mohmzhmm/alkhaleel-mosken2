@@ -497,7 +497,7 @@ Ur boken:
         }
 
         window.addEventListener('load', function() {
-            startTicker('ticker-ar', arText, 1, 'ltr');
+            startTicker('ticker-ar', arText, 1, 'rtl');
             startTicker('ticker-sv', svText, 1.5, 'rtl');
         });
     </script>
@@ -4109,8 +4109,8 @@ Ur boken:
                     el.style.transform = 'translateX(0)';
                     el.textContent = val + '          ' + val;
                     // إعادة تشغيل الحركة
-                    let pos = 0;
                     const half = el.scrollWidth / 2;
+                    let pos = 0;
                     function tick() {
                         pos -= 1;
                         if (pos <= -half) pos = 0;
