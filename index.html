@@ -4075,7 +4075,7 @@ Ur boken:
         // المربع العلوي (عربي)
         onValue(ref(db, 'mosque/card_top'), (snapshot) => {
             const val = snapshot.val();
-            if (val !== null && val !== undefined) {
+            if (val) {
                 const el = document.getElementById('left-card-top')?.querySelector('p');
                 if (el) el.innerHTML = val;
             }
@@ -4084,9 +4084,41 @@ Ur boken:
         // المربع السفلي (سويدي)
         onValue(ref(db, 'mosque/card_bottom'), (snapshot) => {
             const val = snapshot.val();
-            if (val !== null && val !== undefined) {
+            if (val) {
                 const el = document.getElementById('left-card-bottom')?.querySelector('p');
                 if (el) el.innerHTML = val;
+            }
+        });
+
+        // عنوان الشريط السفلي
+        onValue(ref(db, 'mosque/ticker_label'), (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+                const el = document.querySelector('.ticker-label');
+                if (el) el.innerText = val;
+            }
+        });
+
+        // نص الشريط السفلي المتحرك
+        onValue(ref(db, 'mosque/ticker_text'), (snapshot) => {
+            const val = snapshot.val();
+            if (val) {
+                // إيقاف الشريط القديم وتشغيل الجديد
+                const el = document.getElementById('ticker-ar');
+                if (el) {
+                    el.style.transform = 'translateX(0)';
+                    el.textContent = val + '          ' + val;
+                    // إعادة تشغيل الحركة
+                    let pos = 0;
+                    const half = el.scrollWidth / 2;
+                    function tick() {
+                        pos -= 1;
+                        if (pos <= -half) pos = 0;
+                        el.style.transform = 'translateX(' + pos + 'px)';
+                        requestAnimationFrame(tick);
+                    }
+                    tick();
+                }
             }
         });
     </script>
