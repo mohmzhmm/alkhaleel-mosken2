@@ -39,7 +39,7 @@
             align-items: stretch;
             gap: 15px;
             margin: 15px auto;
-            width: 50%;
+            width: 45%;
         }
         /* كارتين النص الجانبي - ثابت على اليسار */
         .left-side-cards {
@@ -87,8 +87,8 @@
             align-items: center;
             justify-content: center;
             gap: 20px;
-            margin-top: 20px;
-            width: 50%;
+            margin-top: 80px;
+            width: 45%;
         }
         .timer-side-img {
             width: 180px;
@@ -219,7 +219,7 @@
                         
 
         } /* وقت الصلاة في المستطيل */
-        .swedish-text { display: block; font-size: 0.65em; color: #969fa3; margin-top: 4px; }
+        .swedish-text { display: block; font-size: 0.65em; color: #969fa3; margin-top: 5px; }
 
         .countdown-container {
             background: rgba(25, 35, 40, 0.5); /* نفس لون الـ cards */
@@ -231,7 +231,9 @@
             -webkit-backdrop-filter: blur(15px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             margin-top: 20px;
-            min-width: 1000px; /* لضمان عرض المستطيل */
+            width: 45%; /* غيّر النسبة حسب ما تريد */
+                      max-width: 1000px;
+                      min-width: 400px;
                       transition: all 0.5s ease; }
 
                
@@ -497,7 +499,7 @@ Ur boken:
         }
 
         window.addEventListener('load', function() {
-            startTicker('ticker-ar', arText, 1, 'rtl');
+            startTicker('ticker-ar', arText, 1, 'ltr');
             startTicker('ticker-sv', svText, 1.5, 'rtl');
         });
     </script>
@@ -4110,10 +4112,10 @@ Ur boken:
                     el.textContent = val + '          ' + val;
                     // إعادة تشغيل الحركة
                     const half = el.scrollWidth / 2;
-                    let pos = 0;
+                    let pos = -half;
                     function tick() {
-                        pos -= 1;
-                        if (pos <= -half) pos = 0;
+                        pos += 1;
+                        if (pos >= 0) pos = -half;
                         el.style.transform = 'translateX(' + pos + 'px)';
                         requestAnimationFrame(tick);
                     }
