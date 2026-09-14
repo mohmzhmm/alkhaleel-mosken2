@@ -68,7 +68,16 @@ async function deletePeriod(kind,row){
 }
 function friendlyError(error){const message=error?.message||'حدث خطأ غير متوقع.';if(/overlap/i.test(message))return'تتداخل هذه الفترة مع فترة موجودة للصلاة نفسها. عدّل الفترة القديمة أو اختر تواريخ أخرى.';if(/Prayer order/i.test(message))return'هذا التعديل يجعل ترتيب أوقات الصلوات غير صحيح في أحد الأيام.';if(/Iqama outside/i.test(message))return'وقت الإقامة يقع قبل الأذان أو بعد الصلاة التالية في أحد الأيام.';if(/Missing prayer/i.test(message))return'الفترة المختارة تتجاوز حدود جدول المواقيت المتوفر.';if(/Forbidden|permission|policy/i.test(message))return'لا يملك هذا الحساب صلاحية تنفيذ العملية.';return message}
 function fillContent(){const c=state.content||{};$('news-ar').value=c.news_ar||'';$('news-sv').value=c.news_sv||'';$('ticker-label').value=c.ticker_label||'';$('ticker-text').value=c.ticker_text||''}
-async function saveContent(event){event.preventDefault();busy(true);try{const{error}=await db.rpc('save_display_content',{p_news_ar:$('news-ar').value,p_news_sv:$('news-sv').value,p_ticker_label:$('ticker-label').value,p_ticker_text:$('ticker-text').value});if(error)throw error;await loadAll();notice('تم تحديث أخبار الشاشة والشريط السفلي.')}catch(error){notice(friendlyError(error),true)}finally{busy(false)}}
+async function saveContent(event){
+ event.preventDefault();
+ const current=state.content||{};
+ const fields=[['news-ar','p_news_ar','news_ar'],['news-sv','p_news_sv','news_sv'],['ticker-label','p_ticker_label','ticker_label'],['ticker-text','p_ticker_text','ticker_text']];
+ const changes=fields.map(([id,param,key])=>[$(id).value.trim()!==String(current[key]||'').trim(),param,$(id).value]);
+ if(!changes.some(([changed])=>changed))return notice('لم تغيّر أي حقل. بقي المحتوى كما هو.');
+ const payload=Object.fromEntries(changes.map(([changed,param,value])=>[param,changed?value:null]));
+ busy(true);
+ try{const{error}=await db.rpc('save_display_content',payload);if(error)throw error;await loadAll();notice('تم حفظ الحقول التي غيّرتها فقط، وبقي باقي المحتوى كما هو.')}catch(error){notice(friendlyError(error),true)}finally{busy(false)}
+}
 
 $('login-form').addEventListener('submit',async event=>{event.preventDefault();busy(true);try{const{error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)throw error;await assertAdmin();$('password').value='';showDashboard(true);await loadAll()}catch(error){await db.auth.signOut();notice(friendlyError(error),true)}finally{busy(false)}});
 $('logout').onclick=async()=>{await db.auth.signOut();showDashboard(false)};
