@@ -176,6 +176,7 @@ Ur boken:
         function startTicker(elId, text, speed, dir) {
             var el = document.getElementById(elId);
             if (!el) return;
+            if (el._tickerFrame) cancelAnimationFrame(el._tickerFrame);
             el.textContent = text + text;
             var pos = 0, half = 0;
             function measure() {
@@ -188,7 +189,7 @@ Ur boken:
                 if (dir === 'ltr') { pos += speed; if (pos >= 0) pos = -half; }
                 else { pos -= speed; if (pos <= -half) pos = 0; }
                 el.style.transform = 'translateX(' + pos + 'px)';
-                requestAnimationFrame(tick);
+                el._tickerFrame = requestAnimationFrame(tick);
             }
             measure();
         }
@@ -608,17 +609,7 @@ Ur boken:
          *   - العشاء = المغرب + 60 دقيقة
          *   - الفجر  = الشروق + 90 دقيقة
          */
-        function getAdjustedTodayData() {
-            const now  = new Date();
-            const base = getTodayData();
-            if (!base) return null;
-            if (!isSummerPeriod(now)) return base;
-
-            return Object.assign({}, base, {
-                'Ishâ': addMinutes(base.Maghrib, 60),
-                'Fajr': addMinutes(base.Shuruq, -90)
-            });
-        }
+        function getAdjustedTodayData() { return getTodayData(); }
 
         /**
          * أوفست الإقامة حسب الفترة:
@@ -629,6 +620,16 @@ Ur boken:
             return isSummerPeriod(new Date())
                 ? { Fajr: 15, Duhur: 10, Asr: 10, Maghrib: 5, 'Ishâ': 5 }
                 : { Fajr: 10, Duhur: 10, Asr: 10, Maghrib: 5, 'Ishâ': 10 };
+        }
+
+        const remotePrayerKeys = { Fajr:'fajr', Duhur:'dhuhr', Asr:'asr', Maghrib:'maghrib', 'Ishâ':'isha' };
+        function getIqamaTime(day, prayer) {
+            const date = day.Datum.slice(0,10);
+            const rule = (window.alkhaleelIqamaRules || []).find(r =>
+                r.prayer === remotePrayerKeys[prayer] && r.valid_from <= date && r.valid_to >= date);
+            if (rule?.mode === 'fixed') return String(rule.value).slice(0,5);
+            const minutes = rule?.mode === 'offset' ? Number(rule.value) : (getIqamaOffsets()[prayer] ?? 0);
+            return calculateIqamaTime(day[prayer], minutes);
         }
 
         function getTodayData() {
@@ -681,7 +682,6 @@ Ur boken:
 
         function renderTable() {
             const times   = getAdjustedTodayData();
-            const offsets = getIqamaOffsets();
             if (!times) return;
 
             for (let key in labels) {
@@ -693,9 +693,7 @@ Ur boken:
                 if (timeEl)  timeEl.innerText = times[key] || '--:--';
 
                 if (iqamaEl) {
-                    iqamaEl.innerText = (key === 'Shuruq')
-                        ? '-'
-                        : calculateIqamaTime(times[key], offsets[key] ?? 0);
+                    iqamaEl.innerText = (key === 'Shuruq') ? '-' : getIqamaTime(times, key);
                 }
 
                 if (cardEl) {
@@ -710,15 +708,14 @@ Ur boken:
         function updateTimer() {
             const now     = new Date();
             const todayData = getAdjustedTodayData();   // ← مُعدَّل
-            const offsets   = getIqamaOffsets();          // ← مُعدَّل
             if (!todayData) return;
 
             const prayers = [
-                { n: labels.Fajr.ar,    t: todayData.Fajr,    i: offsets.Fajr,    sv: labels.Fajr.sv,    data: todayData },
-                { n: labels.Duhur.ar,   t: todayData.Duhur,   i: offsets.Duhur,   sv: labels.Duhur.sv,   data: todayData },
-                { n: labels.Asr.ar,     t: todayData.Asr,     i: offsets.Asr,     sv: labels.Asr.sv,     data: todayData },
-                { n: labels.Maghrib.ar, t: todayData.Maghrib, i: offsets.Maghrib, sv: labels.Maghrib.sv, data: todayData },
-                { n: labels['Ishâ'].ar, t: todayData['Ishâ'], i: offsets['Ishâ'], sv: labels['Ishâ'].sv, data: todayData }
+                { k:'Fajr',   n:labels.Fajr.ar,    t:todayData.Fajr,    sv:labels.Fajr.sv,    data:todayData },
+                { k:'Duhur',  n:labels.Duhur.ar,   t:todayData.Duhur,   sv:labels.Duhur.sv,   data:todayData },
+                { k:'Asr',    n:labels.Asr.ar,     t:todayData.Asr,     sv:labels.Asr.sv,     data:todayData },
+                { k:'Maghrib',n:labels.Maghrib.ar, t:todayData.Maghrib, sv:labels.Maghrib.sv, data:todayData },
+                { k:'Ishâ',   n:labels['Ishâ'].ar, t:todayData['Ishâ'], sv:labels['Ishâ'].sv, data:todayData }
             ];
 
             let target = null, nameAr = "", nameSv = "", mode = "";
@@ -726,7 +723,8 @@ Ur boken:
 
             for (let p of prayers) {
                 const pTime    = parseDateTime(p.data, p.t);
-                const iTime    = new Date(pTime.getTime() + p.i * 60000);
+                let iTime = parseDateTime(p.data, getIqamaTime(p.data,p.k));
+                if (p.k === 'Ishâ' && iTime < pTime) iTime.setDate(iTime.getDate()+1);
                 const endGreen = new Date(iTime.getTime() + 5 * 60000);
 
                 if (now >= iTime && now < endGreen) { overlay.style.display = 'flex'; return; }
@@ -742,14 +740,7 @@ Ur boken:
                              String(tmr.getDate()).padStart(2,'0') + " 00:00:00";
                 const tData = prayerData.find(d => d.Datum === tStr);
                 if (tData) {
-                    // تطبيق قواعد الصيف على بيانات الغد أيضاً
-                    const adjTmr = isSummerPeriod(tmr)
-                        ? Object.assign({}, tData, {
-                            'Ishâ': addMinutes(tData.Maghrib, 60),
-                            'Fajr': addMinutes(tData.Shuruq, -90)
-                          })
-                        : tData;
-                    target = parseDateTime(adjTmr, adjTmr.Fajr);
+                    target = parseDateTime(tData, tData.Fajr);
                     nameAr = labels.Fajr.ar; nameSv = labels.Fajr.sv; mode = "اذان";
                 }
             }
@@ -806,46 +797,7 @@ Ur boken:
         window.addEventListener('resize', positionLeftCards);
     </script>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-        const firebaseConfig = {
-            apiKey:            "AIzaSyBuVwm5PzSzpDicDfGjo6KXTiiLQ8rb9NQ",
-            authDomain:        "masjid-screen-7fa3a.firebaseapp.com",
-            databaseURL:       "https://masjid-screen-7fa3a-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId:         "masjid-screen-7fa3a",
-            storageBucket:     "masjid-screen-7fa3a.firebasestorage.app",
-            messagingSenderId: "973750176364",
-            appId:             "1:973750176364:web:616ad4a46b074e2ea66649"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db  = getDatabase(app);
-
-        onValue(ref(db, 'mosque/card_top'), (snapshot) => {
-            const val = snapshot.val();
-            if (val) { const el = document.getElementById('left-card-top')?.querySelector('p'); if (el) el.innerHTML = val; }
-        });
-        onValue(ref(db, 'mosque/card_bottom'), (snapshot) => {
-            const val = snapshot.val();
-            if (val) { const el = document.getElementById('left-card-bottom')?.querySelector('p'); if (el) el.innerHTML = val; }
-        });
-        onValue(ref(db, 'mosque/ticker_label'), (snapshot) => {
-            const val = snapshot.val();
-            if (val) { const el = document.querySelector('.ticker-label'); if (el) el.innerText = val; }
-        });
-        onValue(ref(db, 'mosque/ticker_text'), (snapshot) => {
-            const val = snapshot.val();
-            if (val) {
-                const el = document.getElementById('ticker-ar');
-                if (el) {
-                    el.textContent = val + '          ' + val;
-                    const half = el.scrollWidth / 2;
-                    let pos = -half;
-                    function tick() { pos += 1; if (pos >= 0) pos = -half; el.style.transform = 'translateX(' + pos + 'px)'; requestAnimationFrame(tick); }
-                    tick();
-                }
-            }
-        });
-    </script>
+    <script src="config.js"></script>
+    <script src="remote-data.js"></script>
 </body>
 </html>
