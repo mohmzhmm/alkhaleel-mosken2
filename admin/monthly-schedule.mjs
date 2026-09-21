@@ -58,7 +58,7 @@ function drawBoxText(ctx,box,text,{size=32,minSize=14,color='#073f3e',weight=700
 function drawMonthTitle(ctx,title){
  ctx.save();ctx.fillStyle='#073f3e';ctx.textAlign='center';ctx.textBaseline='top';ctx.direction='ltr';
  let size=38;do{ctx.font=`700 ${size}px Tajawal, Arial, sans-serif`;if(ctx.measureText(title).width<=500)break;size--;}while(size>24);
- ctx.fillText(title,MONTH_LAYOUT.width/2,20);ctx.restore();
+ ctx.fillText(title,MONTH_LAYOUT.width/2,35);ctx.restore();
 }
 
 function imageFor(days){return`templates/${days}-days.png`}
