@@ -34,6 +34,8 @@
         <button class="tab active" data-tab="iqama" type="button">فترات الإقامة</button>
         <button class="tab" data-tab="prayer" type="button">تعديل الأذان</button>
         <button class="tab" data-tab="screen" type="button">أخبار الشاشة والشريط</button>
+        <button class="tab" data-tab="notification" type="button">إرسال إشعار</button>
+        <button class="tab" data-tab="calendar" type="button">جدول الشهر</button>
       </nav>
 
       <section id="tab-iqama" class="panel tab-panel">
@@ -66,13 +68,56 @@
       </section>
 
       <section id="tab-screen" class="panel tab-panel hidden">
-        <div class="panel-head"><div><div class="eyebrow">alkhaleel-mosken2 فقط</div><h2>الأخبار والشريط السفلي</h2><p>غيّر الحقول المطلوبة فقط؛ أي حقل لم تعدّله سيبقى محفوظًا كما هو.</p></div></div>
-        <form id="screen-form" class="stack">
+        <div class="panel-head"><div><div class="eyebrow">alkhaleel-mosken2 فقط</div><h2>الأخبار والشريط السفلي</h2><p>النصوص هنا تظهر على الشاشة الثانية دون إرسال إشعار إلى مستخدمي تطبيق الهاتف.</p></div></div>
+        <form id="news-form" class="stack content-editor">
+          <h3>الأخبار</h3>
           <div class="two-cols"><label>الخبر بالعربية<textarea id="news-ar" rows="7" maxlength="4000"></textarea></label><label>Nyhet på svenska<textarea id="news-sv" rows="7" maxlength="4000" dir="ltr"></textarea></label></div>
+          <button class="button primary" type="submit">حفظ الأخبار فقط</button>
+        </form>
+        <form id="ticker-form" class="stack content-editor">
+          <h3>الشريط السفلي</h3>
           <label>عنوان الشريط<input id="ticker-label" maxlength="100" placeholder="الأربعون النووية"></label>
           <label>نص الشريط المتحرك<textarea id="ticker-text" rows="5" maxlength="6000"></textarea></label>
-          <button class="button primary" type="submit">حفظ التغييرات فقط</button>
+          <button class="button primary" type="submit">حفظ الشريط فقط</button>
         </form>
+        <div class="safe-save-note">حفظ الأخبار لا يغيّر الشريط، وحفظ الشريط لا يغيّر الأخبار.</div>
+      </section>
+
+      <section id="tab-notification" class="panel tab-panel hidden">
+        <div class="panel-head"><div><div class="eyebrow">تطبيق الهاتف</div><h2>إرسال إشعار للمستخدمين</h2><p>اكتب النص بالعربية والسويدية. يستلم كل مستخدم اللغة التي اختارها داخل التطبيق.</p></div></div>
+        <form id="notification-form" class="stack">
+          <div class="two-cols">
+            <label>عنوان الإشعار بالعربية<input id="notification-title-ar" maxlength="120" required></label>
+            <label>Rubrik på svenska<input id="notification-title-sv" maxlength="120" dir="ltr" required></label>
+          </div>
+          <div class="two-cols">
+            <label>نص الإشعار بالعربية<textarea id="notification-body-ar" rows="5" maxlength="2000" required></textarea></label>
+            <label>Meddelande på svenska<textarea id="notification-body-sv" rows="5" maxlength="2000" dir="ltr" required></textarea></label>
+          </div>
+          <div id="notification-preview" class="notification-preview hidden"></div>
+          <div class="form-actions compact-actions">
+            <button id="notification-preview-button" class="button ghost" type="button">معاينة</button>
+            <button class="button primary" type="submit">إرسال الإشعار الآن</button>
+          </div>
+        </form>
+        <div class="history-block"><h3>آخر الإشعارات</h3><div id="notification-history" class="history-list"></div></div>
+      </section>
+
+      <section id="tab-calendar" class="panel tab-panel hidden">
+        <div class="panel-head"><div><div class="eyebrow">PDF وPNG</div><h2>إنشاء جدول مواقيت الشهر</h2><p>يختار النظام قالب 28 أو 29 أو 30 أو 31 يومًا تلقائيًا، ويستخدم المواقيت الفعلية بعد تطبيق تعديلات الأدمن.</p></div></div>
+        <form id="calendar-form" class="calendar-editor">
+          <label>الشهر<input id="calendar-month" type="month" required></label>
+          <label>عنوان الشهر<input id="calendar-title" maxlength="80" required></label>
+          <label class="wide-field">نص المربع الأيسر<textarea id="calendar-left-text" rows="4" maxlength="450" placeholder="اكتب النص الذي تريد ظهوره تحت عنوان الشهر"></textarea></label>
+          <label class="wide-field">نص المربع الأيمن<textarea id="calendar-right-text" rows="5" maxlength="550" placeholder="اكتب إعلانًا أو معلومات إضافية"></textarea></label>
+          <div class="form-actions calendar-actions">
+            <button id="calendar-preview-button" class="button ghost" type="button">إنشاء المعاينة</button>
+            <button id="calendar-png-button" class="button primary" type="button">تنزيل PNG</button>
+            <button id="calendar-pdf-button" class="button primary" type="button">تنزيل PDF</button>
+          </div>
+        </form>
+        <div class="calendar-note">تُلوّن أيام الجمعة تلقائيًا. لن يسمح النظام بالتصدير إذا كان أي يوم أو وقت مفقودًا.</div>
+        <div id="calendar-preview-wrap" class="calendar-preview-wrap hidden"><canvas id="calendar-canvas" width="1414" height="2000" aria-label="معاينة جدول مواقيت الشهر"></canvas></div>
       </section>
     </section>
   </main>
