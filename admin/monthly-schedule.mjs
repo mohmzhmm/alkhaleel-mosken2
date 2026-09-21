@@ -39,7 +39,7 @@ function wrapLines(ctx,text,maxWidth){
  return lines;
 }
 
-function drawBoxText(ctx,box,text,{size=30,minSize=14,color='#073f3e',weight=600,paddingX=44,paddingY=34}={}){
+function drawBoxText(ctx,box,text,{size=32,minSize=14,color='#073f3e',weight=700,paddingX=38,paddingY=28}={}){
  ctx.save();ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction=/[\u0600-\u06ff]/.test(text)?'rtl':'ltr';
  const maxWidth=box.w-paddingX*2,maxHeight=box.h-paddingY*2;
  let chosenSize=size,lines=[],lineHeight=0;
@@ -58,7 +58,7 @@ function drawBoxText(ctx,box,text,{size=30,minSize=14,color='#073f3e',weight=600
 function drawMonthTitle(ctx,title){
  ctx.save();ctx.fillStyle='#073f3e';ctx.textAlign='center';ctx.textBaseline='top';ctx.direction='ltr';
  let size=38;do{ctx.font=`700 ${size}px Tajawal, Arial, sans-serif`;if(ctx.measureText(title).width<=500)break;size--;}while(size>24);
- ctx.fillText(title,MONTH_LAYOUT.width/2,8);ctx.restore();
+ ctx.fillText(title,MONTH_LAYOUT.width/2,20);ctx.restore();
 }
 
 function imageFor(days){return`templates/${days}-days.png`}
@@ -76,15 +76,15 @@ export class MonthlyScheduleRenderer{
    ctx.save();ctx.fillStyle=isFriday?'#f7e8b6':'#ffffff';for(let c=0;c<8;c++)ctx.fillRect(MONTH_LAYOUT.columns[c]+1,top+1,MONTH_LAYOUT.columns[c+1]-MONTH_LAYOUT.columns[c]-2,bottom-top-2);ctx.restore();
   }
   drawMonthTitle(ctx,title);
-  drawBoxText(ctx,MONTH_LAYOUT.monthBox,leftText,{size:30,minSize:14,weight:600});
-  drawBoxText(ctx,MONTH_LAYOUT.rightBox,rightText,{size:30,minSize:14,weight:600});
+  drawBoxText(ctx,MONTH_LAYOUT.monthBox,leftText,{size:32,minSize:14,weight:700});
+  drawBoxText(ctx,MONTH_LAYOUT.rightBox,rightText,{size:32,minSize:14,weight:700});
   ctx.fillStyle='#073f3e';ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction='ltr';
   for(let index=0;index<rows.length;index++){
    const day=index+1,row=rows[index],date=new Date(Date.UTC(meta.year,meta.month-1,day)),friday=date.getUTCDay()===5,{center}=rowBounds(day);
    ctx.fillStyle=friday?'#7b3515':'#073f3e';
-   ctx.font='700 22px Tajawal, Arial, sans-serif';ctx.fillText(String(day),(MONTH_LAYOUT.columns[0]+MONTH_LAYOUT.columns[1])/2,center+1);
-   ctx.font='700 21px Tajawal, Arial, sans-serif';ctx.fillText(weekdays[date.getUTCDay()],(MONTH_LAYOUT.columns[1]+MONTH_LAYOUT.columns[2])/2,center+1);
-   ctx.font='700 23px Tajawal, Arial, sans-serif';
+   ctx.font='700 24px Tajawal, Arial, sans-serif';ctx.fillText(String(day),(MONTH_LAYOUT.columns[0]+MONTH_LAYOUT.columns[1])/2,center+1);
+   ctx.font='700 23px Tajawal, Arial, sans-serif';ctx.fillText(weekdays[date.getUTCDay()],(MONTH_LAYOUT.columns[1]+MONTH_LAYOUT.columns[2])/2,center+1);
+   ctx.font='700 25px Tajawal, Arial, sans-serif';
    prayers.forEach((prayer,p)=>{const value=String(row[prayer]).slice(0,5),x=(MONTH_LAYOUT.columns[p+2]+MONTH_LAYOUT.columns[p+3])/2;ctx.fillText(value,x,center+1);});
   }
   this.last={meta,title};return this.canvas;
