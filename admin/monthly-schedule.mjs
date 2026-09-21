@@ -28,25 +28,37 @@ export function validateMonthRows(rows,meta){
  return true;
 }
 
-function fitText(ctx,text,maxWidth,startSize,minSize=18,weight=600){
- let size=startSize;do{ctx.font=`${weight} ${size}px Tajawal, Arial, sans-serif`;if(ctx.measureText(text).width<=maxWidth)return size;size--;}while(size>=minSize);return minSize;
-}
-
-function wrapLines(ctx,text,maxWidth,maxLines){
- const paragraphs=String(text||'').split(/\n/),lines=[];
+function wrapLines(ctx,text,maxWidth){
+ const paragraphs=String(text||'').replace(/\r/g,'').split(/\n/),lines=[];
  for(const paragraph of paragraphs){
-  const words=paragraph.trim().split(/\s+/).filter(Boolean);if(!words.length){if(lines.length<maxLines)lines.push('');continue;}
+  const words=paragraph.trim().split(/\s+/).filter(Boolean);if(!words.length){lines.push('');continue;}
   let line='';
-  for(const word of words){const test=line?`${line} ${word}`:word;if(ctx.measureText(test).width<=maxWidth)line=test;else{if(line)lines.push(line);line=word;if(lines.length>=maxLines)break;}}
-  if(lines.length<maxLines&&line)lines.push(line);if(lines.length>=maxLines)break;
+  for(const word of words){const test=line?`${line} ${word}`:word;if(ctx.measureText(test).width<=maxWidth)line=test;else{if(line)lines.push(line);line=word;}}
+  if(line)lines.push(line);
  }
- return lines.slice(0,maxLines);
+ return lines;
 }
 
-function drawBoxText(ctx,box,text,{size=27,maxLines=7,color='#073f3e',weight=600}={}){
- ctx.save();ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction=/[\u0600-\u06ff]/.test(text)?'rtl':'ltr';ctx.font=`${weight} ${size}px Tajawal, Arial, sans-serif`;
- const lines=wrapLines(ctx,text,box.w-64,maxLines),lineHeight=size*1.45,total=(lines.length-1)*lineHeight;
+function drawBoxText(ctx,box,text,{size=30,minSize=14,color='#073f3e',weight=600,paddingX=44,paddingY=34}={}){
+ ctx.save();ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction=/[\u0600-\u06ff]/.test(text)?'rtl':'ltr';
+ const maxWidth=box.w-paddingX*2,maxHeight=box.h-paddingY*2;
+ let chosenSize=size,lines=[],lineHeight=0;
+ for(let candidate=size;candidate>=minSize;candidate--){
+  ctx.font=`${weight} ${candidate}px Tajawal, Arial, sans-serif`;
+  const candidateLines=wrapLines(ctx,text,maxWidth),candidateLineHeight=candidate*1.36;
+  const widest=candidateLines.reduce((value,line)=>Math.max(value,ctx.measureText(line).width),0);
+  if(candidateLines.length*candidateLineHeight<=maxHeight&&widest<=maxWidth){chosenSize=candidate;lines=candidateLines;lineHeight=candidateLineHeight;break;}
+ }
+ if(!lines.length){ctx.font=`${weight} ${minSize}px Tajawal, Arial, sans-serif`;chosenSize=minSize;lines=wrapLines(ctx,text,maxWidth);lineHeight=minSize*1.3;}
+ ctx.font=`${weight} ${chosenSize}px Tajawal, Arial, sans-serif`;
+ const total=(lines.length-1)*lineHeight;
  lines.forEach((line,i)=>ctx.fillText(line,box.x+box.w/2,box.y+box.h/2-total/2+i*lineHeight));ctx.restore();
+}
+
+function drawMonthTitle(ctx,title){
+ ctx.save();ctx.fillStyle='#073f3e';ctx.textAlign='center';ctx.textBaseline='top';ctx.direction='ltr';
+ let size=38;do{ctx.font=`700 ${size}px Tajawal, Arial, sans-serif`;if(ctx.measureText(title).width<=500)break;size--;}while(size>24);
+ ctx.fillText(title,MONTH_LAYOUT.width/2,8);ctx.restore();
 }
 
 function imageFor(days){return`templates/${days}-days.png`}
@@ -61,16 +73,18 @@ export class MonthlyScheduleRenderer{
   const{ctx}=this;ctx.clearRect(0,0,MONTH_LAYOUT.width,MONTH_LAYOUT.height);ctx.drawImage(image,0,0,MONTH_LAYOUT.width,MONTH_LAYOUT.height);
   for(let day=1;day<=meta.days;day++){
    const date=new Date(Date.UTC(meta.year,meta.month-1,day)),isFriday=date.getUTCDay()===5,{top,bottom}=rowBounds(day);
-   if(isFriday){ctx.save();ctx.fillStyle='rgba(232,188,48,.28)';for(let c=0;c<8;c++)ctx.fillRect(MONTH_LAYOUT.columns[c]+1,top+1,MONTH_LAYOUT.columns[c+1]-MONTH_LAYOUT.columns[c]-2,bottom-top-2);ctx.restore();}
+   ctx.save();ctx.fillStyle=isFriday?'#f7e8b6':'#ffffff';for(let c=0;c<8;c++)ctx.fillRect(MONTH_LAYOUT.columns[c]+1,top+1,MONTH_LAYOUT.columns[c+1]-MONTH_LAYOUT.columns[c]-2,bottom-top-2);ctx.restore();
   }
-  drawBoxText(ctx,{...MONTH_LAYOUT.monthBox,y:MONTH_LAYOUT.monthBox.y+22,h:115},title,{size:38,maxLines:2,weight:700});
-  drawBoxText(ctx,{x:MONTH_LAYOUT.monthBox.x+15,y:MONTH_LAYOUT.monthBox.y+130,w:MONTH_LAYOUT.monthBox.w-30,h:MONTH_LAYOUT.monthBox.h-145},leftText,{size:25,maxLines:6});
-  drawBoxText(ctx,MONTH_LAYOUT.rightBox,rightText,{size:25,maxLines:8});
-  ctx.fillStyle='#173f3e';ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction='ltr';
+  drawMonthTitle(ctx,title);
+  drawBoxText(ctx,MONTH_LAYOUT.monthBox,leftText,{size:30,minSize:14,weight:600});
+  drawBoxText(ctx,MONTH_LAYOUT.rightBox,rightText,{size:30,minSize:14,weight:600});
+  ctx.fillStyle='#073f3e';ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction='ltr';
   for(let index=0;index<rows.length;index++){
    const day=index+1,row=rows[index],date=new Date(Date.UTC(meta.year,meta.month-1,day)),friday=date.getUTCDay()===5,{center}=rowBounds(day);
-   ctx.font=`${friday?700:500} 18px Tajawal, Arial, sans-serif`;ctx.fillStyle=friday?'#8b3f16':'#173f3e';ctx.fillText(weekdays[date.getUTCDay()],(MONTH_LAYOUT.columns[1]+MONTH_LAYOUT.columns[2])/2,center+1);
-   ctx.font=`${friday?700:600} 20px Tajawal, Arial, sans-serif`;
+   ctx.fillStyle=friday?'#7b3515':'#073f3e';
+   ctx.font='700 22px Tajawal, Arial, sans-serif';ctx.fillText(String(day),(MONTH_LAYOUT.columns[0]+MONTH_LAYOUT.columns[1])/2,center+1);
+   ctx.font='700 21px Tajawal, Arial, sans-serif';ctx.fillText(weekdays[date.getUTCDay()],(MONTH_LAYOUT.columns[1]+MONTH_LAYOUT.columns[2])/2,center+1);
+   ctx.font='700 23px Tajawal, Arial, sans-serif';
    prayers.forEach((prayer,p)=>{const value=String(row[prayer]).slice(0,5),x=(MONTH_LAYOUT.columns[p+2]+MONTH_LAYOUT.columns[p+3])/2;ctx.fillText(value,x,center+1);});
   }
   this.last={meta,title};return this.canvas;
