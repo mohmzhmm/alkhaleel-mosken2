@@ -6,8 +6,18 @@ const names={fajr:'الفجر',sunrise:'الشروق',dhuhr:'الظهر',asr:'ا
 const iqamaPrayers=['fajr','dhuhr','asr','maghrib','isha'];
 const allPrayers=['fajr','sunrise','dhuhr','asr','maghrib','isha'];
 const $=id=>document.getElementById(id);
-const state={iqama:[],prayer:[],content:null,announcements:[]};
+const state={iqama:[],prayer:[],content:null,announcements:[],calendarDefaults:null,layouts:{}};
 const calendar=new MonthlyScheduleRenderer($('calendar-canvas'));
+const layoutDefaults={
+ 'alkhaleel-mosken2':{logo_size:180,logo_x:15,logo_y:15,clock_font:64,date_font:26,countdown_font:112,countdown_label_font:29,next_prayer_font:48,prayer_name_font:29,swedish_name_font:19,prayer_time_font:26,iqama_label_font:13,iqama_time_font:19,header_offset:0,countdown_offset:80,cards_offset:15,cards_width:45,card_gap:15,news_font:19,side_width:450,side_x:60,ticker_font:32,ticker_height:80},
+ 'alkhaleel-mosken':{logo_size:70,logo_x:10,logo_y:10,clock_font:48,date_font:16,countdown_font:80,countdown_label_font:17,next_prayer_font:32,prayer_name_font:20,swedish_name_font:12,prayer_time_font:18,iqama_label_font:10,iqama_time_font:16,header_offset:8,countdown_offset:12,cards_offset:12,cards_width:92,card_gap:8}
+};
+const layoutFields=[
+ ['الشعار','logo_size','حجم الشعار',30,400,1,'px'],['الشعار','logo_x','المسافة الأفقية للشعار',0,300,1,'px'],['الشعار','logo_y','المسافة الرأسية للشعار',0,300,1,'px'],
+ ['الرأس والعداد','clock_font','حجم الساعة',24,120,1,'px'],['الرأس والعداد','date_font','حجم التاريخ',10,60,1,'px'],['الرأس والعداد','header_offset','موضع الرأس من الأعلى',-50,300,1,'px'],['الرأس والعداد','countdown_font','حجم العداد التنازلي',36,200,1,'px'],['الرأس والعداد','countdown_label_font','حجم عبارة العداد',10,60,1,'px'],['الرأس والعداد','next_prayer_font','حجم اسم الصلاة القادمة',14,90,1,'px'],['الرأس والعداد','countdown_offset','موضع العداد من الأعلى',-50,300,1,'px'],
+ ['بطاقات الصلاة','prayer_name_font','حجم اسم الصلاة',12,70,1,'px'],['بطاقات الصلاة','swedish_name_font','حجم الاسم السويدي',8,50,1,'px'],['بطاقات الصلاة','prayer_time_font','حجم وقت الصلاة',12,70,1,'px'],['بطاقات الصلاة','iqama_label_font','حجم كلمة الإقامة',8,40,1,'px'],['بطاقات الصلاة','iqama_time_font','حجم وقت الإقامة',10,60,1,'px'],['بطاقات الصلاة','cards_offset','موضع البطاقات من الأعلى',-50,300,1,'px'],['بطاقات الصلاة','cards_width','عرض منطقة البطاقات',40,100,1,'%'],['بطاقات الصلاة','card_gap','المسافة بين البطاقات',0,50,1,'px'],
+ ['الشاشة الأفقية','news_font','حجم خط الأخبار',10,60,1,'px',['alkhaleel-mosken2']],['الشاشة الأفقية','side_width','عرض الجانبين',200,700,1,'px',['alkhaleel-mosken2']],['الشاشة الأفقية','side_x','بعد الجانبين عن الحافة',0,300,1,'px',['alkhaleel-mosken2']],['الشاشة الأفقية','ticker_font','حجم خط الشريط',12,60,1,'px',['alkhaleel-mosken2']],['الشاشة الأفقية','ticker_height','ارتفاع الشريط',40,160,1,'px',['alkhaleel-mosken2']]
+];
 
 function busy(on){$('busy').classList.toggle('hidden',!on)}
 function notice(message,error=false){const el=$('notice');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(notice.timer);notice.timer=setTimeout(()=>el.classList.add('hidden'),6000)}
@@ -22,15 +32,18 @@ async function assertAdmin(){const{data,error}=await db.rpc('is_mosque_admin');i
 async function loadAll(){
  busy(true);
  try{
-  const[iqama,prayer,content,announcements]=await Promise.all([
+  const[iqama,prayer,content,announcements,calendarDefaults,layouts]=await Promise.all([
    db.from('iqama_rules').select('id,prayer,mode,value,valid_from,valid_to,updated_at').order('valid_from'),
    db.from('prayer_time_periods').select('id,prayer,mode,value,valid_from,valid_to,updated_at').order('valid_from'),
    db.from('mosque_display_content').select('news_ar,news_sv,ticker_label,ticker_text,updated_at').eq('id',1).single(),
-   db.from('announcements').select('id,title_ar,title_sv,body_ar,body_sv,created_at').order('created_at',{ascending:false}).limit(10)
+   db.from('announcements').select('id,title_ar,title_sv,body_ar,body_sv,created_at').order('created_at',{ascending:false}).limit(10),
+   db.from('mosque_calendar_defaults').select('left_text,right_text,updated_at').eq('id',1).single(),
+   db.from('mosque_screen_layouts').select('screen_key,settings,updated_at')
   ]);
-  if(iqama.error)throw iqama.error;if(prayer.error)throw prayer.error;if(content.error)throw content.error;if(announcements.error)throw announcements.error;
-  state.iqama=iqama.data||[];state.prayer=prayer.data||[];state.content=content.data;state.announcements=announcements.data||[];
-  renderPeriods('iqama');renderPeriods('prayer');fillContent();renderAnnouncementHistory();
+  if(iqama.error)throw iqama.error;if(prayer.error)throw prayer.error;if(content.error)throw content.error;if(announcements.error)throw announcements.error;if(calendarDefaults.error)throw calendarDefaults.error;if(layouts.error)throw layouts.error;
+  state.iqama=iqama.data||[];state.prayer=prayer.data||[];state.content=content.data;state.announcements=announcements.data||[];state.calendarDefaults=calendarDefaults.data;
+  state.layouts=Object.fromEntries((layouts.data||[]).map(row=>[row.screen_key,row.settings]));
+  renderPeriods('iqama');renderPeriods('prayer');fillContent();renderAnnouncementHistory();fillCalendarDefaults();renderLayoutEditor();
  }finally{busy(false)}
 }
 
@@ -78,6 +91,24 @@ function previewNotification(){const value=notificationValues(),preview=$('notif
 async function publishNotification(event){event.preventDefault();const value=notificationValues();if(!confirm(`سيتم إرسال الإشعار الآن إلى مستخدمي تطبيق الهاتف.\n\n${value.title_ar}\n\nهل تريد المتابعة؟`))return;busy(true);try{const id=crypto.randomUUID(),{error}=await db.rpc('publish_announcement',{p_id:id,p_title_ar:value.title_ar,p_title_sv:value.title_sv,p_body_ar:value.body_ar,p_body_sv:value.body_sv});if(error)throw error;event.target.reset();$('notification-preview').classList.add('hidden');await loadAll();notice('تمت إضافة الإشعار إلى طابور الإرسال، وسيصل خلال نحو دقيقة.')}catch(error){notice(friendlyError(error),true)}finally{busy(false)}}
 function renderAnnouncementHistory(){const root=$('notification-history');root.replaceChildren();if(!state.announcements.length){root.textContent='لا توجد إشعارات سابقة.';return}for(const item of state.announcements){const card=document.createElement('div');card.className='history-card';const title=document.createElement('strong'),body=document.createElement('div'),date=document.createElement('small');title.textContent=item.title_ar;body.textContent=item.body_ar;date.textContent=new Intl.DateTimeFormat('ar-SE',{dateStyle:'medium',timeStyle:'short',timeZone:'Europe/Stockholm'}).format(new Date(item.created_at));card.append(title,body,date);root.append(card)}}
 
+function fillCalendarDefaults(){const value=state.calendarDefaults||{};$('calendar-left-text').value=value.left_text||'';$('calendar-right-text').value=value.right_text||''}
+async function saveCalendarDefaults(){busy(true);try{const{error}=await db.rpc('save_calendar_defaults',{p_left_text:$('calendar-left-text').value,p_right_text:$('calendar-right-text').value});if(error)throw error;state.calendarDefaults={left_text:$('calendar-left-text').value.trim(),right_text:$('calendar-right-text').value.trim()};fillCalendarDefaults();notice('تم حفظ نصّي المربعين، وسيبقيان محفوظين حتى تغيّرهما.')}catch(error){notice(friendlyError(error),true)}finally{busy(false)}}
+
+function selectedLayoutKey(){return $('layout-screen').value}
+function currentLayoutValues(){const values={};document.querySelectorAll('#layout-controls input[data-layout-key]').forEach(input=>values[input.dataset.layoutKey]=Number(input.value));return values}
+function previewLayout(){const frame=$('layout-preview');if(frame.contentWindow)frame.contentWindow.postMessage({type:'alkhaleel-layout-preview',screenKey:selectedLayoutKey(),settings:currentLayoutValues()},location.origin)}
+function renderLayoutEditor(forceDefaults=false){
+ const screenKey=selectedLayoutKey(),values=forceDefaults?layoutDefaults[screenKey]:{...layoutDefaults[screenKey],...(state.layouts[screenKey]||{})},root=$('layout-controls');root.replaceChildren();let group='';
+ for(const[fieldGroup,key,label,min,max,step,unit,screens]of layoutFields){
+  if(screens&&!screens.includes(screenKey))continue;
+  if(group!==fieldGroup){group=fieldGroup;const title=document.createElement('h3');title.className='layout-group-title';title.textContent=group;root.append(title)}
+  const box=document.createElement('div');box.className='layout-control';const labelEl=document.createElement('label'),name=document.createElement('span'),output=document.createElement('output'),input=document.createElement('input');name.textContent=label;output.textContent=`${values[key]} ${unit}`;input.type='range';input.min=min;input.max=max;input.step=step;input.value=values[key];input.dataset.layoutKey=key;input.oninput=()=>{output.textContent=`${input.value} ${unit}`;previewLayout()};labelEl.append(name,output);box.append(labelEl,input);root.append(box);
+ }
+ updateLayoutPreviewSource();setTimeout(previewLayout,250);
+}
+function updateLayoutPreviewSource(){const frame=$('layout-preview'),screenKey=selectedLayoutKey(),next=screenKey==='alkhaleel-mosken2'?'../index.html':'/alkhaleel-mosken/';if(frame.getAttribute('src')!==next)frame.src=next}
+async function saveLayout(){const screenKey=selectedLayoutKey(),settings=currentLayoutValues();busy(true);try{const{error}=await db.rpc('save_screen_layout',{p_screen_key:screenKey,p_settings:settings});if(error)throw error;state.layouts[screenKey]=settings;notice('تم حفظ التصميم. ستلتقط الشاشة الإعدادات الجديدة خلال دقيقة واحدة.')}catch(error){notice(friendlyError(error),true)}finally{busy(false)}}
+
 function defaultMonth(){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Stockholm',year:'numeric',month:'2-digit'}).formatToParts(new Date()),year=parts.find(x=>x.type==='year').value,month=parts.find(x=>x.type==='month').value;return`${year}-${month}`}
 function updateCalendarTitle(){try{$('calendar-title').value=getMonthMeta($('calendar-month').value).title}catch{}}
 async function renderCalendar(){const meta=getMonthMeta($('calendar-month').value),{data,error}=await db.from('effective_prayer_times').select('prayer_date,fajr,sunrise,dhuhr,asr,maghrib,isha').gte('prayer_date',meta.start).lte('prayer_date',meta.end).order('prayer_date');if(error)throw error;await calendar.render({meta,rows:data||[],title:$('calendar-title').value.trim()||meta.title,leftText:$('calendar-left-text').value.trim(),rightText:$('calendar-right-text').value.trim()});$('calendar-preview-wrap').classList.remove('hidden');$('calendar-preview-wrap').scrollIntoView({behavior:'smooth',block:'start'});return meta}
@@ -90,7 +121,8 @@ $('logout').onclick=async()=>{await db.auth.signOut();showDashboard(false)};
 for(const prefix of['iqama','prayer']){$(prefix+'-mode').onchange=()=>updateValueField(prefix);$(prefix+'-cancel').onclick=()=>setDefaults(prefix);$(prefix+'-form').onsubmit=event=>savePeriod(prefix,event)}
 $('news-form').onsubmit=event=>saveContentPart('news',event);$('ticker-form').onsubmit=event=>saveContentPart('ticker',event);
 $('notification-preview-button').onclick=previewNotification;$('notification-form').onsubmit=publishNotification;
-$('calendar-month').value=defaultMonth();updateCalendarTitle();$('calendar-month').onchange=updateCalendarTitle;$('calendar-preview-button').onclick=()=>void prepareCalendar();$('calendar-png-button').onclick=()=>void exportCalendar('png');$('calendar-pdf-button').onclick=()=>void exportCalendar('pdf');
+$('layout-screen').onchange=()=>renderLayoutEditor();$('layout-reset').onclick=()=>{renderLayoutEditor(true);notice('تمت استعادة القيم الأصلية في المعاينة. اضغط حفظ وتطبيق لتثبيتها.')};$('layout-save').onclick=()=>void saveLayout();$('layout-preview').onload=()=>setTimeout(previewLayout,100);
+$('calendar-month').value=defaultMonth();updateCalendarTitle();$('calendar-month').onchange=updateCalendarTitle;$('calendar-save-texts-button').onclick=()=>void saveCalendarDefaults();$('calendar-preview-button').onclick=()=>void prepareCalendar();$('calendar-png-button').onclick=()=>void exportCalendar('png');$('calendar-pdf-button').onclick=()=>void exportCalendar('pdf');
 $('calendar-form').onsubmit=event=>event.preventDefault();
 document.querySelectorAll('.tab').forEach(button=>button.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===button));document.querySelectorAll('.tab-panel').forEach(x=>x.classList.add('hidden'));$('tab-'+button.dataset.tab).classList.remove('hidden')});
 fillPrayerOptions('iqama-prayer',iqamaPrayers);fillPrayerOptions('prayer-prayer',allPrayers);setDefaults('iqama');setDefaults('prayer');

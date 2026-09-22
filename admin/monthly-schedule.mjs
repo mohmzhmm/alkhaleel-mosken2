@@ -58,7 +58,7 @@ function drawBoxText(ctx,box,text,{size=32,minSize=14,color='#073f3e',weight=700
 function drawMonthTitle(ctx,title){
  ctx.save();ctx.fillStyle='#073f3e';ctx.textAlign='center';ctx.textBaseline='top';ctx.direction='ltr';
  let size=38;do{ctx.font=`700 ${size}px Tajawal, Arial, sans-serif`;if(ctx.measureText(title).width<=500)break;size--;}while(size>24);
- ctx.fillText(title,MONTH_LAYOUT.width/2,20);ctx.restore();
+ ctx.fillText(title,MONTH_LAYOUT.width/2,45);ctx.restore();
 }
 
 function imageFor(days){return`templates/${days}-days.png`}
@@ -82,9 +82,9 @@ export class MonthlyScheduleRenderer{
   for(let index=0;index<rows.length;index++){
    const day=index+1,row=rows[index],date=new Date(Date.UTC(meta.year,meta.month-1,day)),friday=date.getUTCDay()===5,{center}=rowBounds(day);
    ctx.fillStyle=friday?'#7b3515':'#073f3e';
-   ctx.font='700 24px Tajawal, Arial, sans-serif';ctx.fillText(String(day),(MONTH_LAYOUT.columns[0]+MONTH_LAYOUT.columns[1])/2,center+1);
-   ctx.font='700 23px Tajawal, Arial, sans-serif';ctx.fillText(weekdays[date.getUTCDay()],(MONTH_LAYOUT.columns[1]+MONTH_LAYOUT.columns[2])/2,center+1);
-   ctx.font='700 25px Tajawal, Arial, sans-serif';
+   ctx.font='700 27px Tajawal, Arial, sans-serif';ctx.fillText(String(day),(MONTH_LAYOUT.columns[0]+MONTH_LAYOUT.columns[1])/2,center+1);
+   ctx.font='700 26px Tajawal, Arial, sans-serif';ctx.fillText(weekdays[date.getUTCDay()],(MONTH_LAYOUT.columns[1]+MONTH_LAYOUT.columns[2])/2,center+1);
+   ctx.font='700 30px Tajawal, Arial, sans-serif';
    prayers.forEach((prayer,p)=>{const value=String(row[prayer]).slice(0,5),x=(MONTH_LAYOUT.columns[p+2]+MONTH_LAYOUT.columns[p+3])/2;ctx.fillText(value,x,center+1);});
   }
   this.last={meta,title};return this.canvas;

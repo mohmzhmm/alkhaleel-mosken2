@@ -35,6 +35,7 @@
         <button class="tab" data-tab="prayer" type="button">تعديل الأذان</button>
         <button class="tab" data-tab="screen" type="button">أخبار الشاشة والشريط</button>
         <button class="tab" data-tab="notification" type="button">إرسال إشعار</button>
+        <button class="tab" data-tab="layout" type="button">تخصيص الشاشتين</button>
         <button class="tab" data-tab="calendar" type="button">جدول الشهر</button>
       </nav>
 
@@ -103,6 +104,17 @@
         <div class="history-block"><h3>آخر الإشعارات</h3><div id="notification-history" class="history-list"></div></div>
       </section>
 
+      <section id="tab-layout" class="panel tab-panel hidden">
+        <div class="panel-head"><div><div class="eyebrow">تحكم آمن ومعاينة مباشرة</div><h2>تخصيص الشاشتين</h2><p>غيّر أحجام الخطوط والشعار والمسافات لكل شاشة بصورة مستقلة. القيم محدودة تلقائيًا كي لا تخرج العناصر خارج الشاشة.</p></div></div>
+        <div class="layout-toolbar">
+          <label>الشاشة<select id="layout-screen"><option value="alkhaleel-mosken2">الشاشة الأفقية — alkhaleel-mosken2</option><option value="alkhaleel-mosken">الشاشة العمودية — alkhaleel-mosken</option></select></label>
+          <div class="form-actions compact-actions"><button id="layout-reset" class="button ghost" type="button">استعادة القيم الأصلية</button><button id="layout-save" class="button primary" type="button">حفظ وتطبيق</button></div>
+        </div>
+        <div id="layout-controls" class="layout-controls"></div>
+        <div class="safe-save-note">تظهر المعاينة فورًا أثناء التحريك، لكن لن تُطبّق على الشاشات الفعلية حتى تضغط «حفظ وتطبيق».</div>
+        <div class="layout-preview-shell"><iframe id="layout-preview" title="معاينة الشاشة" loading="lazy"></iframe></div>
+      </section>
+
       <section id="tab-calendar" class="panel tab-panel hidden">
         <div class="panel-head"><div><div class="eyebrow">PDF وPNG</div><h2>إنشاء جدول مواقيت الشهر</h2><p>يختار النظام قالب 28 أو 29 أو 30 أو 31 يومًا تلقائيًا، ويستخدم المواقيت الفعلية بعد تطبيق تعديلات الأدمن.</p></div></div>
         <form id="calendar-form" class="calendar-editor">
@@ -111,12 +123,13 @@
           <label class="wide-field">نص المربع الأيسر<textarea id="calendar-left-text" rows="4" maxlength="450" placeholder="اكتب النص الذي تريد ظهوره تحت عنوان الشهر"></textarea></label>
           <label class="wide-field">نص المربع الأيمن<textarea id="calendar-right-text" rows="5" maxlength="550" placeholder="اكتب إعلانًا أو معلومات إضافية"></textarea></label>
           <div class="form-actions calendar-actions">
+            <button id="calendar-save-texts-button" class="button ghost" type="button">حفظ نصّي المربعين دائمًا</button>
             <button id="calendar-preview-button" class="button ghost" type="button">إنشاء المعاينة</button>
             <button id="calendar-png-button" class="button primary" type="button">تنزيل PNG</button>
             <button id="calendar-pdf-button" class="button primary" type="button">تنزيل PDF</button>
           </div>
         </form>
-        <div class="calendar-note">تُلوّن أيام الجمعة تلقائيًا. لن يسمح النظام بالتصدير إذا كان أي يوم أو وقت مفقودًا.</div>
+        <div class="calendar-note">تُلوّن أيام الجمعة تلقائيًا. النصان المحفوظان يبقيان كما هما في الزيارات القادمة حتى يغيّرهما المشرف ويحفظهما مجددًا.</div>
         <div id="calendar-preview-wrap" class="calendar-preview-wrap hidden"><canvas id="calendar-canvas" width="1414" height="2000" aria-label="معاينة جدول مواقيت الشهر"></canvas></div>
       </section>
     </section>
