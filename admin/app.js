@@ -6,7 +6,7 @@ const names={fajr:'الفجر',sunrise:'الشروق',dhuhr:'الظهر',asr:'ا
 const iqamaPrayers=['fajr','dhuhr','asr','maghrib','isha'];
 const allPrayers=['fajr','sunrise','dhuhr','asr','maghrib','isha'];
 const $=id=>document.getElementById(id);
-const state={iqama:[],prayer:[],content:null,announcements:[],calendarDefaults:null,layouts:{}};
+const state={iqama:[],prayer:[],content:null,announcements:[],calendarDefaults:null,layouts:{},layoutDrafts:{},layoutElement:null};
 const calendar=new MonthlyScheduleRenderer($('calendar-canvas'));
 const layoutDefaults={
  'alkhaleel-mosken2':{logo_size:180,logo_x:15,logo_y:15,clock_font:64,date_font:26,countdown_font:112,countdown_label_font:29,next_prayer_font:48,prayer_name_font:29,swedish_name_font:19,prayer_time_font:26,iqama_label_font:13,iqama_time_font:19,header_offset:0,countdown_offset:80,cards_offset:15,cards_width:45,card_gap:15,news_font:19,side_width:450,side_x:60,ticker_font:32,ticker_height:80},
@@ -18,6 +18,14 @@ const layoutFields=[
  ['بطاقات الصلاة','prayer_name_font','حجم اسم الصلاة',12,70,1,'px'],['بطاقات الصلاة','swedish_name_font','حجم الاسم السويدي',8,50,1,'px'],['بطاقات الصلاة','prayer_time_font','حجم وقت الصلاة',12,70,1,'px'],['بطاقات الصلاة','iqama_label_font','حجم كلمة الإقامة',8,40,1,'px'],['بطاقات الصلاة','iqama_time_font','حجم وقت الإقامة',10,60,1,'px'],['بطاقات الصلاة','cards_offset','موضع البطاقات من الأعلى',-50,300,1,'px'],['بطاقات الصلاة','cards_width','عرض منطقة البطاقات',40,100,1,'%'],['بطاقات الصلاة','card_gap','المسافة بين البطاقات',0,50,1,'px'],
  ['الشاشة الأفقية','news_font','حجم خط الأخبار',10,60,1,'px',['alkhaleel-mosken2']],['الشاشة الأفقية','side_width','عرض الجانبين',200,700,1,'px',['alkhaleel-mosken2']],['الشاشة الأفقية','side_x','بعد الجانبين عن الحافة',0,300,1,'px',['alkhaleel-mosken2']],['الشاشة الأفقية','ticker_font','حجم خط الشريط',12,60,1,'px',['alkhaleel-mosken2']],['الشاشة الأفقية','ticker_height','ارتفاع الشريط',40,160,1,'px',['alkhaleel-mosken2']]
 ];
+const layoutTargets={
+ logo:['logo_size','logo_x','logo_y'],
+ header:['clock_font','date_font','header_offset'],
+ countdown:['countdown_font','countdown_label_font','next_prayer_font','countdown_offset'],
+ prayer_cards:['prayer_name_font','swedish_name_font','prayer_time_font','iqama_label_font','iqama_time_font','cards_offset','cards_width','card_gap'],
+ news:['news_font','side_width','side_x'],side_images:['side_width','side_x'],ticker:['ticker_font','ticker_height']
+};
+const layoutElementNames={logo:'الشعار',header:'الساعة والتاريخ',countdown:'العداد التنازلي',prayer_cards:'بطاقات الصلوات',news:'بطاقات الأخبار',side_images:'الصور الجانبية',ticker:'الشريط السفلي'};
 
 function busy(on){$('busy').classList.toggle('hidden',!on)}
 function notice(message,error=false){const el=$('notice');el.textContent=message;el.classList.toggle('error',error);el.classList.remove('hidden');clearTimeout(notice.timer);notice.timer=setTimeout(()=>el.classList.add('hidden'),6000)}
@@ -43,6 +51,7 @@ async function loadAll(){
   if(iqama.error)throw iqama.error;if(prayer.error)throw prayer.error;if(content.error)throw content.error;if(announcements.error)throw announcements.error;if(calendarDefaults.error)throw calendarDefaults.error;if(layouts.error)throw layouts.error;
   state.iqama=iqama.data||[];state.prayer=prayer.data||[];state.content=content.data;state.announcements=announcements.data||[];state.calendarDefaults=calendarDefaults.data;
   state.layouts=Object.fromEntries((layouts.data||[]).map(row=>[row.screen_key,row.settings]));
+  state.layoutDrafts=Object.fromEntries(Object.keys(layoutDefaults).map(key=>[key,{...layoutDefaults[key],...(state.layouts[key]||{})}]));
   renderPeriods('iqama');renderPeriods('prayer');fillContent();renderAnnouncementHistory();fillCalendarDefaults();renderLayoutEditor();
  }finally{busy(false)}
 }
@@ -95,19 +104,24 @@ function fillCalendarDefaults(){const value=state.calendarDefaults||{};$('calend
 async function saveCalendarDefaults(){busy(true);try{const{error}=await db.rpc('save_calendar_defaults',{p_left_text:$('calendar-left-text').value,p_right_text:$('calendar-right-text').value});if(error)throw error;state.calendarDefaults={left_text:$('calendar-left-text').value.trim(),right_text:$('calendar-right-text').value.trim()};fillCalendarDefaults();notice('تم حفظ نصّي المربعين، وسيبقيان محفوظين حتى تغيّرهما.')}catch(error){notice(friendlyError(error),true)}finally{busy(false)}}
 
 function selectedLayoutKey(){return $('layout-screen').value}
-function currentLayoutValues(){const values={};document.querySelectorAll('#layout-controls input[data-layout-key]').forEach(input=>values[input.dataset.layoutKey]=Number(input.value));return values}
-function previewLayout(){const frame=$('layout-preview');if(frame.contentWindow)frame.contentWindow.postMessage({type:'alkhaleel-layout-preview',screenKey:selectedLayoutKey(),settings:currentLayoutValues()},location.origin)}
+function layoutDraft(screenKey=selectedLayoutKey()){return state.layoutDrafts[screenKey]||(state.layoutDrafts[screenKey]={...layoutDefaults[screenKey],...(state.layouts[screenKey]||{})})}
+function currentLayoutValues(){return{...layoutDraft()}}
+function previewLayout(){const frame=$('layout-preview');if(frame.contentWindow)frame.contentWindow.postMessage({type:'alkhaleel-layout-preview',screenKey:selectedLayoutKey(),settings:currentLayoutValues()},'*')}
+function enableLayoutSelection(){const frame=$('layout-preview');if(frame.contentWindow)frame.contentWindow.postMessage({type:'alkhaleel-layout-select-mode',screenKey:selectedLayoutKey(),enabled:true},'*')}
 function renderLayoutEditor(forceDefaults=false){
- const screenKey=selectedLayoutKey(),values=forceDefaults?layoutDefaults[screenKey]:{...layoutDefaults[screenKey],...(state.layouts[screenKey]||{})},root=$('layout-controls');root.replaceChildren();let group='';
+ const screenKey=selectedLayoutKey(),element=state.layoutElement,values=layoutDraft(screenKey),root=$('layout-controls'),status=$('layout-selection-status');root.replaceChildren();
+ $('screen-content-settings').classList.toggle('hidden',screenKey!=='alkhaleel-mosken2');
+ if(!element||!layoutTargets[element]){status.textContent='اضغط على أي عنصر داخل الشاشة المعروضة بالأسفل لتعديله.';status.classList.remove('selected');updateLayoutPreviewSource();setTimeout(()=>{previewLayout();enableLayoutSelection()},250);return}
+ const keys=layoutTargets[element];if(forceDefaults)for(const key of keys)values[key]=layoutDefaults[screenKey][key];status.textContent=`العنصر المحدد: ${layoutElementNames[element]}`;status.classList.add('selected');let group='';
  for(const[fieldGroup,key,label,min,max,step,unit,screens]of layoutFields){
-  if(screens&&!screens.includes(screenKey))continue;
+  if(!keys.includes(key)||(screens&&!screens.includes(screenKey)))continue;
   if(group!==fieldGroup){group=fieldGroup;const title=document.createElement('h3');title.className='layout-group-title';title.textContent=group;root.append(title)}
-  const box=document.createElement('div');box.className='layout-control';const labelEl=document.createElement('label'),name=document.createElement('span'),output=document.createElement('output'),input=document.createElement('input');name.textContent=label;output.textContent=`${values[key]} ${unit}`;input.type='range';input.min=min;input.max=max;input.step=step;input.value=values[key];input.dataset.layoutKey=key;input.oninput=()=>{output.textContent=`${input.value} ${unit}`;previewLayout()};labelEl.append(name,output);box.append(labelEl,input);root.append(box);
+  const box=document.createElement('div');box.className='layout-control';const labelEl=document.createElement('label'),name=document.createElement('span'),output=document.createElement('output'),input=document.createElement('input');name.textContent=label;output.textContent=`${values[key]} ${unit}`;input.type='range';input.min=min;input.max=max;input.step=step;input.value=values[key];input.dataset.layoutKey=key;input.oninput=()=>{values[key]=Number(input.value);output.textContent=`${input.value} ${unit}`;previewLayout()};labelEl.append(name,output);box.append(labelEl,input);root.append(box);
  }
- updateLayoutPreviewSource();setTimeout(previewLayout,250);
+ updateLayoutPreviewSource();setTimeout(()=>{previewLayout();enableLayoutSelection()},250);
 }
 function updateLayoutPreviewSource(){const frame=$('layout-preview'),screenKey=selectedLayoutKey(),next=screenKey==='alkhaleel-mosken2'?'../index.html':'/alkhaleel-mosken/';if(frame.getAttribute('src')!==next)frame.src=next}
-async function saveLayout(){const screenKey=selectedLayoutKey(),settings=currentLayoutValues();busy(true);try{const{error}=await db.rpc('save_screen_layout',{p_screen_key:screenKey,p_settings:settings});if(error)throw error;state.layouts[screenKey]=settings;notice('تم حفظ التصميم. ستلتقط الشاشة الإعدادات الجديدة خلال دقيقة واحدة.')}catch(error){notice(friendlyError(error),true)}finally{busy(false)}}
+async function saveLayout(){const screenKey=selectedLayoutKey(),settings=currentLayoutValues();busy(true);try{const{error}=await db.rpc('save_screen_layout',{p_screen_key:screenKey,p_settings:settings});if(error)throw error;state.layouts[screenKey]={...settings};notice('تم حفظ التصميم. ستلتقط الشاشة الإعدادات الجديدة خلال دقيقة واحدة.')}catch(error){notice(friendlyError(error),true)}finally{busy(false)}}
 
 function defaultMonth(){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Stockholm',year:'numeric',month:'2-digit'}).formatToParts(new Date()),year=parts.find(x=>x.type==='year').value,month=parts.find(x=>x.type==='month').value;return`${year}-${month}`}
 function updateCalendarTitle(){try{$('calendar-title').value=getMonthMeta($('calendar-month').value).title}catch{}}
@@ -121,7 +135,8 @@ $('logout').onclick=async()=>{await db.auth.signOut();showDashboard(false)};
 for(const prefix of['iqama','prayer']){$(prefix+'-mode').onchange=()=>updateValueField(prefix);$(prefix+'-cancel').onclick=()=>setDefaults(prefix);$(prefix+'-form').onsubmit=event=>savePeriod(prefix,event)}
 $('news-form').onsubmit=event=>saveContentPart('news',event);$('ticker-form').onsubmit=event=>saveContentPart('ticker',event);
 $('notification-preview-button').onclick=previewNotification;$('notification-form').onsubmit=publishNotification;
-$('layout-screen').onchange=()=>renderLayoutEditor();$('layout-reset').onclick=()=>{renderLayoutEditor(true);notice('تمت استعادة القيم الأصلية في المعاينة. اضغط حفظ وتطبيق لتثبيتها.')};$('layout-save').onclick=()=>void saveLayout();$('layout-preview').onload=()=>setTimeout(previewLayout,100);
+$('layout-screen').onchange=()=>{state.layoutElement=null;renderLayoutEditor()};$('layout-reset').onclick=()=>{if(!state.layoutElement)return notice('اختر عنصرًا من المعاينة أولًا.',true);renderLayoutEditor(true);previewLayout();notice('تمت استعادة القيم الأصلية لهذا العنصر في المعاينة. اضغط حفظ وتطبيق لتثبيتها.')};$('layout-save').onclick=()=>void saveLayout();$('layout-preview').onload=()=>setTimeout(()=>{previewLayout();enableLayoutSelection()},100);
+window.addEventListener('message',event=>{const data=event.data;if(data?.type!=='alkhaleel-layout-element-selected'||data.screenKey!==selectedLayoutKey()||!layoutTargets[data.element])return;state.layoutElement=data.element;renderLayoutEditor();$('layout-controls').scrollIntoView({behavior:'smooth',block:'nearest'})});
 $('calendar-month').value=defaultMonth();updateCalendarTitle();$('calendar-month').onchange=updateCalendarTitle;$('calendar-save-texts-button').onclick=()=>void saveCalendarDefaults();$('calendar-preview-button').onclick=()=>void prepareCalendar();$('calendar-png-button').onclick=()=>void exportCalendar('png');$('calendar-pdf-button').onclick=()=>void exportCalendar('pdf');
 $('calendar-form').onsubmit=event=>event.preventDefault();
 document.querySelectorAll('.tab').forEach(button=>button.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===button));document.querySelectorAll('.tab-panel').forEach(x=>x.classList.add('hidden'));$('tab-'+button.dataset.tab).classList.remove('hidden')});

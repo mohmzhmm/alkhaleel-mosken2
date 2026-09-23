@@ -33,7 +33,6 @@
       <nav class="tabs" aria-label="أقسام الإدارة">
         <button class="tab active" data-tab="iqama" type="button">فترات الإقامة</button>
         <button class="tab" data-tab="prayer" type="button">تعديل الأذان</button>
-        <button class="tab" data-tab="screen" type="button">أخبار الشاشة والشريط</button>
         <button class="tab" data-tab="notification" type="button">إرسال إشعار</button>
         <button class="tab" data-tab="layout" type="button">تخصيص الشاشتين</button>
         <button class="tab" data-tab="calendar" type="button">جدول الشهر</button>
@@ -68,22 +67,6 @@
         <div class="table-wrap"><table><thead><tr><th>الصلاة</th><th>التعديل</th><th>الفترة</th><th>الإجراءات</th></tr></thead><tbody id="prayer-rows"></tbody></table></div>
       </section>
 
-      <section id="tab-screen" class="panel tab-panel hidden">
-        <div class="panel-head"><div><div class="eyebrow">alkhaleel-mosken2 فقط</div><h2>الأخبار والشريط السفلي</h2><p>النصوص هنا تظهر على الشاشة الثانية دون إرسال إشعار إلى مستخدمي تطبيق الهاتف.</p></div></div>
-        <form id="news-form" class="stack content-editor">
-          <h3>الأخبار</h3>
-          <div class="two-cols"><label>الخبر بالعربية<textarea id="news-ar" rows="7" maxlength="4000"></textarea></label><label>Nyhet på svenska<textarea id="news-sv" rows="7" maxlength="4000" dir="ltr"></textarea></label></div>
-          <button class="button primary" type="submit">حفظ الأخبار فقط</button>
-        </form>
-        <form id="ticker-form" class="stack content-editor">
-          <h3>الشريط السفلي</h3>
-          <label>عنوان الشريط<input id="ticker-label" maxlength="100" placeholder="الأربعون النووية"></label>
-          <label>نص الشريط المتحرك<textarea id="ticker-text" rows="5" maxlength="6000"></textarea></label>
-          <button class="button primary" type="submit">حفظ الشريط فقط</button>
-        </form>
-        <div class="safe-save-note">حفظ الأخبار لا يغيّر الشريط، وحفظ الشريط لا يغيّر الأخبار.</div>
-      </section>
-
       <section id="tab-notification" class="panel tab-panel hidden">
         <div class="panel-head"><div><div class="eyebrow">تطبيق الهاتف</div><h2>إرسال إشعار للمستخدمين</h2><p>اكتب النص بالعربية والسويدية. يستلم كل مستخدم اللغة التي اختارها داخل التطبيق.</p></div></div>
         <form id="notification-form" class="stack">
@@ -105,14 +88,30 @@
       </section>
 
       <section id="tab-layout" class="panel tab-panel hidden">
-        <div class="panel-head"><div><div class="eyebrow">تحكم آمن ومعاينة مباشرة</div><h2>تخصيص الشاشتين</h2><p>غيّر أحجام الخطوط والشعار والمسافات لكل شاشة بصورة مستقلة. القيم محدودة تلقائيًا كي لا تخرج العناصر خارج الشاشة.</p></div></div>
+        <div class="panel-head"><div><div class="eyebrow">تحكم آمن ومعاينة مباشرة</div><h2>تخصيص الشاشتين</h2><p>اختر الشاشة ثم اضغط على العنصر المطلوب داخل المعاينة؛ ستظهر أدوات ذلك العنصر فقط.</p></div></div>
         <div class="layout-toolbar">
           <label>الشاشة<select id="layout-screen"><option value="alkhaleel-mosken2">الشاشة الأفقية — alkhaleel-mosken2</option><option value="alkhaleel-mosken">الشاشة العمودية — alkhaleel-mosken</option></select></label>
-          <div class="form-actions compact-actions"><button id="layout-reset" class="button ghost" type="button">استعادة القيم الأصلية</button><button id="layout-save" class="button primary" type="button">حفظ وتطبيق</button></div>
+          <div class="form-actions compact-actions"><button id="layout-reset" class="button ghost" type="button">استعادة العنصر</button><button id="layout-save" class="button primary" type="button">حفظ وتطبيق</button></div>
         </div>
+        <div id="layout-selection-status" class="layout-selection-status">اضغط على أي عنصر داخل الشاشة المعروضة بالأسفل لتعديله.</div>
         <div id="layout-controls" class="layout-controls"></div>
         <div class="safe-save-note">تظهر المعاينة فورًا أثناء التحريك، لكن لن تُطبّق على الشاشات الفعلية حتى تضغط «حفظ وتطبيق».</div>
         <div class="layout-preview-shell"><iframe id="layout-preview" title="معاينة الشاشة" loading="lazy"></iframe></div>
+        <div id="screen-content-settings">
+          <div class="section-divider"><div class="eyebrow">الشاشة الأفقية فقط</div><h3>نصوص الأخبار والشريط السفلي</h3></div>
+          <form id="news-form" class="stack content-editor">
+            <h3>الأخبار</h3>
+            <div class="two-cols"><label>الخبر بالعربية<textarea id="news-ar" rows="7" maxlength="4000"></textarea></label><label>Nyhet på svenska<textarea id="news-sv" rows="7" maxlength="4000" dir="ltr"></textarea></label></div>
+            <button class="button primary" type="submit">حفظ الأخبار فقط</button>
+          </form>
+          <form id="ticker-form" class="stack content-editor">
+            <h3>الشريط السفلي</h3>
+            <label>عنوان الشريط<input id="ticker-label" maxlength="100" placeholder="الأربعون النووية"></label>
+            <label>نص الشريط المتحرك<textarea id="ticker-text" rows="5" maxlength="6000"></textarea></label>
+            <button class="button primary" type="submit">حفظ الشريط فقط</button>
+          </form>
+          <div class="safe-save-note">حفظ الأخبار لا يغيّر الشريط، وحفظ الشريط لا يغيّر الأخبار.</div>
+        </div>
       </section>
 
       <section id="tab-calendar" class="panel tab-panel hidden">

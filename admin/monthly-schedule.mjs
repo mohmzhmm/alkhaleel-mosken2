@@ -15,7 +15,7 @@ export function getMonthMeta(value){
  const [year,month]=value.split('-').map(Number);
  if(year<2026||year>2100||month<1||month>12)throw new Error('الشهر خارج النطاق المدعوم.');
  const days=new Date(Date.UTC(year,month,0)).getUTCDate();
- return{year,month,days,start:`${year}-${String(month).padStart(2,'0')}-01`,end:`${year}-${String(month).padStart(2,'0')}-${days}`,title:`${swedishMonths[month-1]} ${year}`};
+ return{year,month,days,start:`${year}-${String(month).padStart(2,'0')}-01`,end:`${year}-${String(month).padStart(2,'0')}-${days}`,title:swedishMonths[month-1]};
 }
 
 export function validateMonthRows(rows,meta){
