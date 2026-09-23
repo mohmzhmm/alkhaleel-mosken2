@@ -18,6 +18,11 @@ export function getMonthMeta(value){
  return{year,month,days,start:`${year}-${String(month).padStart(2,'0')}-01`,end:`${year}-${String(month).padStart(2,'0')}-${days}`,title:swedishMonths[month-1]};
 }
 
+export function monthTitleWithoutYear(value,meta){
+ const year=String(meta.year),cleaned=String(value||'').replace(new RegExp(`(^|\\s|[-–—/])${year}(?=$|\\s|[-–—/])`,'g'),' ').replace(/\s{2,}/g,' ').replace(/^[-–—/\s]+|[-–—/\s]+$/g,'').trim();
+ return cleaned||meta.title;
+}
+
 export function validateMonthRows(rows,meta){
  if(!Array.isArray(rows)||rows.length!==meta.days)throw new Error(`قاعدة البيانات لا تحتوي على جميع أيام الشهر (${meta.days} يومًا).`);
  for(let i=0;i<rows.length;i++){
@@ -67,7 +72,7 @@ function rowBounds(day){const top=MONTH_LAYOUT.rows[day-1],bottom=MONTH_LAYOUT.r
 
 export class MonthlyScheduleRenderer{
  constructor(canvas){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.last=null;}
- async render({meta,rows,title,leftText,rightText}){
+ async render({meta,rows,title,leftText,rightText,tableFontSize=30}){
   validateMonthRows(rows,meta);if(![28,29,30,31].includes(meta.days))throw new Error('لا يوجد قالب مناسب لهذا الشهر.');
   await document.fonts.ready;const image=await loadImage(imageFor(meta.days));
   const{ctx}=this;ctx.clearRect(0,0,MONTH_LAYOUT.width,MONTH_LAYOUT.height);ctx.drawImage(image,0,0,MONTH_LAYOUT.width,MONTH_LAYOUT.height);
@@ -75,19 +80,20 @@ export class MonthlyScheduleRenderer{
    const date=new Date(Date.UTC(meta.year,meta.month-1,day)),isFriday=date.getUTCDay()===5,{top,bottom}=rowBounds(day);
    ctx.save();ctx.fillStyle=isFriday?'#f7e8b6':'#ffffff';for(let c=0;c<8;c++)ctx.fillRect(MONTH_LAYOUT.columns[c]+1,top+1,MONTH_LAYOUT.columns[c+1]-MONTH_LAYOUT.columns[c]-2,bottom-top-2);ctx.restore();
   }
-  drawMonthTitle(ctx,title);
+  const safeTitle=monthTitleWithoutYear(title,meta),fontSize=Math.max(22,Math.min(34,Number(tableFontSize)||30));
+  drawMonthTitle(ctx,safeTitle);
   drawBoxText(ctx,MONTH_LAYOUT.monthBox,leftText,{size:32,minSize:14,weight:700});
   drawBoxText(ctx,MONTH_LAYOUT.rightBox,rightText,{size:32,minSize:14,weight:700});
   ctx.fillStyle='#073f3e';ctx.textAlign='center';ctx.textBaseline='middle';ctx.direction='ltr';
   for(let index=0;index<rows.length;index++){
    const day=index+1,row=rows[index],date=new Date(Date.UTC(meta.year,meta.month-1,day)),friday=date.getUTCDay()===5,{center}=rowBounds(day);
    ctx.fillStyle=friday?'#7b3515':'#073f3e';
-   ctx.font='700 27px Tajawal, Arial, sans-serif';ctx.fillText(String(day),(MONTH_LAYOUT.columns[0]+MONTH_LAYOUT.columns[1])/2,center+1);
-   ctx.font='700 26px Tajawal, Arial, sans-serif';ctx.fillText(weekdays[date.getUTCDay()],(MONTH_LAYOUT.columns[1]+MONTH_LAYOUT.columns[2])/2,center+1);
-   ctx.font='700 30px Tajawal, Arial, sans-serif';
+   ctx.font=`700 ${Math.max(22,fontSize-3)}px Tajawal, Arial, sans-serif`;ctx.fillText(String(day),(MONTH_LAYOUT.columns[0]+MONTH_LAYOUT.columns[1])/2,center+1);
+   ctx.font=`700 ${Math.max(22,fontSize-4)}px Tajawal, Arial, sans-serif`;ctx.fillText(weekdays[date.getUTCDay()],(MONTH_LAYOUT.columns[1]+MONTH_LAYOUT.columns[2])/2,center+1);
+   ctx.font=`700 ${fontSize}px Tajawal, Arial, sans-serif`;
    prayers.forEach((prayer,p)=>{const value=String(row[prayer]).slice(0,5),x=(MONTH_LAYOUT.columns[p+2]+MONTH_LAYOUT.columns[p+3])/2;ctx.fillText(value,x,center+1);});
   }
-  this.last={meta,title};return this.canvas;
+  this.last={meta,title:safeTitle};return this.canvas;
  }
  async pngBlob(){if(!this.last)throw new Error('أنشئ المعاينة أولًا.');return new Promise((resolve,reject)=>this.canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('تعذّر إنشاء PNG.')),'image/png'));}
  async pdfBlob(){if(!this.last)throw new Error('أنشئ المعاينة أولًا.');const url=this.canvas.toDataURL('image/jpeg',.98),bytes=Uint8Array.from(atob(url.split(',')[1]),c=>c.charCodeAt(0));return buildPdfFromJpeg(bytes,MONTH_LAYOUT.width,MONTH_LAYOUT.height);}
