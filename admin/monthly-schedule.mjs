@@ -66,15 +66,20 @@ function drawMonthTitle(ctx,title){
  ctx.fillText(title,MONTH_LAYOUT.width/2,45);ctx.restore();
 }
 
-function imageFor(days){return`templates/${days}-days.png`}
+export function imageFor(days,mosqueSlug='al-khalil-finspang'){
+ if(![28,29,30,31].includes(days))throw new Error('لا يوجد قالب مناسب لهذا الشهر.');
+ if(mosqueSlug==='al-khalil-finspang')return`templates/${days}-days.png`;
+ if(mosqueSlug==='saffle-moske')return`templates/saffle/${days}-days.png`;
+ throw new Error('لا توجد قوالب مخصصة لهذا المسجد.');
+}
 function loadImage(src){return new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('تعذّر تحميل قالب الشهر.'));image.src=src;});}
 function rowBounds(day){const top=MONTH_LAYOUT.rows[day-1],bottom=MONTH_LAYOUT.rows[day];if(top==null||bottom==null)throw new Error('صف اليوم خارج القالب.');return{top,bottom,center:(top+bottom)/2};}
 
 export class MonthlyScheduleRenderer{
  constructor(canvas){this.canvas=canvas;this.ctx=canvas.getContext('2d',{alpha:false});this.last=null;}
- async render({meta,rows,title,leftText,rightText,tableFontSize=30}){
+ async render({meta,rows,title,leftText,rightText,tableFontSize=30,mosqueSlug='al-khalil-finspang'}){
   validateMonthRows(rows,meta);if(![28,29,30,31].includes(meta.days))throw new Error('لا يوجد قالب مناسب لهذا الشهر.');
-  await document.fonts.ready;const image=await loadImage(imageFor(meta.days));
+  await document.fonts.ready;const image=await loadImage(imageFor(meta.days,mosqueSlug));
   const{ctx}=this;ctx.clearRect(0,0,MONTH_LAYOUT.width,MONTH_LAYOUT.height);ctx.drawImage(image,0,0,MONTH_LAYOUT.width,MONTH_LAYOUT.height);
   for(let day=1;day<=meta.days;day++){
    const date=new Date(Date.UTC(meta.year,meta.month-1,day)),isFriday=date.getUTCDay()===5,{top,bottom}=rowBounds(day);
