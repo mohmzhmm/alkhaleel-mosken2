@@ -121,7 +121,7 @@ function previewLayout(){const frame=$('layout-preview');if(frame.contentWindow)
 function enableLayoutSelection(){const frame=$('layout-preview');if(frame.contentWindow)frame.contentWindow.postMessage({type:'alkhaleel-layout-select-mode',screenKey:selectedLayoutKey(),enabled:true},'*')}
 function resizeLayoutPreview(){const shell=$('layout-preview-shell'),stage=$('layout-preview-stage'),frame=$('layout-preview'),landscape=selectedLayoutKey()==='alkhaleel-mosken2',width=landscape?1920:1080,height=landscape?1080:1920,available=Math.max(240,shell.clientWidth-24),scale=Math.min(1,available/width,720/height);frame.style.width=`${width}px`;frame.style.height=`${height}px`;frame.style.transform=`scale(${scale})`;stage.style.width=`${Math.round(width*scale)}px`;stage.style.height=`${Math.round(height*scale)}px`}
 function renderLayoutEditor(forceDefaults=false){
- const available=state.mosque?.slug==='al-khalil-finspang';
+ const available=['al-khalil-finspang','saffle-moske'].includes(state.mosque?.slug);
  for(const id of ['layout-preview-shell','layout-controls','layout-save','layout-reset'])$(id).classList.toggle('hidden',!available);
  if(!available){$('screen-content-settings').classList.remove('hidden');$('layout-preview').src='about:blank';$('layout-selection-status').textContent='الأخبار والشريط أدناه تخص مسجدك فقط. معاينة الشاشتين الحالية مخصصة لمسجد الخليل؛ ربط شاشات مسجدك يحتاج إعداد روابطه.';return}
 
@@ -136,7 +136,7 @@ function renderLayoutEditor(forceDefaults=false){
  }
  updateLayoutPreviewSource();setTimeout(()=>{previewLayout();enableLayoutSelection()},250);
 }
-function updateLayoutPreviewSource(){const frame=$('layout-preview'),screenKey=selectedLayoutKey(),next=screenKey==='alkhaleel-mosken2'?'../index.html?adminPreview=20260923-3':'/alkhaleel-mosken/?adminPreview=20260923-3';resizeLayoutPreview();if(frame.getAttribute('src')!==next)frame.src=next}
+function updateLayoutPreviewSource(){const frame=$('layout-preview'),screenKey=selectedLayoutKey(),next=state.mosque?.slug==='saffle-moske'?(screenKey==='alkhaleel-mosken2'?'../saffle/landscape/?adminPreview=1':'../saffle/portrait/?adminPreview=1'):screenKey==='alkhaleel-mosken2'?'../index.html?adminPreview=20260923-3':'/alkhaleel-mosken/?adminPreview=20260923-3';resizeLayoutPreview();if(frame.getAttribute('src')!==next)frame.src=next}
 async function saveLayout(){const screenKey=selectedLayoutKey(),settings=currentLayoutValues();busy(true);try{const{error}=await adminRpc('save_screen_layout',{p_screen_key:screenKey,p_settings:settings});if(error)throw error;state.layouts[screenKey]={...settings};notice('تم حفظ التصميم. ستلتقط الشاشة الإعدادات الجديدة خلال دقيقة واحدة.')}catch(error){notice(friendlyError(error),true)}finally{busy(false)}}
 
 function defaultMonth(){const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Stockholm',year:'numeric',month:'2-digit'}).formatToParts(new Date()),year=parts.find(x=>x.type==='year').value,month=parts.find(x=>x.type==='month').value;return`${year}-${month}`}

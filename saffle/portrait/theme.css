@@ -1,0 +1,13 @@
+/* ألوان شعار مسجد سيفليه */
+:root{--saffle-navy:#1a2933;--saffle-gold:#d2ba8b;--saffle-text:#f5f2ea}
+html,body,.portrait-wrapper{background:radial-gradient(ellipse at 50% 100%,#2b424f 0%,#1a2933 70%)!important;color:var(--saffle-text)}
+.prayer-card,.countdown-container{background:rgba(26,41,51,.85)!important;border-color:rgba(210,186,139,.18);backdrop-filter:blur(15px)}
+.active-card{border-color:var(--saffle-gold)!important;background:#2c3f49!important;box-shadow:0 0 18px rgba(210,186,139,.22)!important}
+.countdown-time,.iqama-label,.iqama-time,#date-hijri,#date-hijri-se{color:var(--saffle-gold)!important;text-shadow:none!important}
+.prayer-name,.prayer-time{color:var(--saffle-text)!important}
+.swedish-text{color:#c2c4bf!important}
+.iqama-box{background:rgba(210,186,139,.12)!important;border-color:rgba(210,186,139,.4)!important}
+.ticker-bar{background:rgba(26,41,51,.92)!important;border-top-color:var(--saffle-gold)!important}
+.ticker-label{background:var(--saffle-gold)!important;color:var(--saffle-navy)!important}
+#prayer-overlay{background:var(--saffle-navy)!important;color:var(--saffle-gold)!important}
+.top-left-logo img{filter:none!important}

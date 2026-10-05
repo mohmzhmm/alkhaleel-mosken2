@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Säffle Moské — مواقيت مسجد الخليل</title>
+    <style>
+        :root { --logo-size:180px; --logo-x:15px; --logo-y:15px; --clock-font:64px; --date-font:26px; --countdown-font:112px; --countdown-label-font:29px; --next-prayer-font:48px; --prayer-name-font:29px; --swedish-name-font:19px; --prayer-time-font:26px; --iqama-label-font:13px; --iqama-time-font:19px; --header-offset:0px; --countdown-offset:80px; --cards-offset:15px; --cards-width:45%; --card-gap:15px; --news-font:19px; --side-width:450px; --side-x:60px; --ticker-font:32px; --ticker-height:80px; }
+        body { margin: 0; padding: 0; background: url('3.png') no-repeat center center fixed; background-size: cover; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        #prayer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #004d00; z-index: 100; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .top-left-logo { position: fixed; top: var(--logo-y); left: var(--logo-x); z-index: 10; }
+        .top-left-logo img { width: var(--logo-size); height: auto; filter: drop-shadow(0 0 8px rgba(0,0,0,0.7)); }
+        .cards-and-side { display: flex; flex-direction: row; align-items: stretch; gap: var(--card-gap); margin: var(--cards-offset) auto 15px; width: var(--cards-width); }
+        .left-side-cards { position: fixed; left: var(--side-x); display: flex; flex-direction: column; width: var(--side-width); gap: 30px; }
+        .left-side-cards .prayer-card { flex: 1; justify-content: center; align-items: center; padding: 15px 12px; text-align: center; font-size: var(--news-font); line-height: 1.7; color: #fff; }
+        .right-side-images { position: fixed; right: var(--side-x); display: flex; flex-direction: column; width: var(--side-width); }
+        .right-side-images .prayer-card { flex: 1; justify-content: center; align-items: center; padding: 15px; gap: 10px; }
+        .right-side-images img { width: 100%; height: auto; object-fit: contain; }
+        .timer-wrapper { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: var(--countdown-offset); width: var(--cards-width); }
+        .header-top { width: 90%; display: flex; justify-content: space-around; align-items: center; padding: 15px 0; margin-top:var(--header-offset); font-size: 1.8rem; color: #ffffff; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; position: relative; }
+        .header-top::after { content: ""; position: absolute; bottom: 0; left: 5%; width: 90%; height: 2px; background: linear-gradient(to right, transparent, rgba(255,255,255,0.5), transparent); }
+        #clock { font-size: var(--clock-font); font-weight: 700; text-align: center; }
+        #date-ar, #date-se { font-size: var(--date-font); opacity: 0.9; }
+        .prayer-cards-container { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+        .prayer-row { display: flex; justify-content: center; gap: var(--card-gap); width: 100%; }
+        .prayer-row .prayer-card { flex: 1; }
+        .prayer-card { background: rgba(25,35,40,0.5); border-radius: 15px; padding: 20px 10px; flex: 1; min-width: 150px; text-align: center; border: 1px solid rgba(255,255,255,0.0); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); display: flex; flex-direction: column; transition: all 0.4s ease; }
+        .prayer-name { color: #ffffff; font-size: var(--prayer-name-font); font-weight: bold; margin-bottom: 2px; }
+        .swedish-name { color: #aaa; font-size: var(--swedish-name-font); margin-bottom: 10px; text-transform: capitalize; }
+        .prayer-time { color: #ffffff; font-size: var(--prayer-time-font); font-weight: bold; margin-bottom: 15px; }
+        .iqama-box { background: rgba(255,202,40,0.1); border: 1px solid rgba(255,202,40,0.3); padding: 10px 5px; border-radius: 10px; margin-top: auto; }
+        .iqama-label { color: #ffca28; font-size: var(--iqama-label-font); display: block; opacity: 0.8; }
+        .iqama-time { color: #ffca28; font-size: var(--iqama-time-font); font-weight: bold; }
+        .active-card { border: 2px solid #ffca28 !important; box-shadow: 0 0 25px rgba(255,202,40,0.5); transform: translateY(-10px); background: rgba(40,50,55,0.7) !important; }
+        .countdown-time { font-size: var(--countdown-font); font-weight: bold; color: #ffca28; font-family: sans-serif; text-shadow: 0 0 20px rgba(255,202,40,0.3); }
+        #timer-label { font-size:var(--countdown-label-font)!important; }
+        #timer-prayer-name { font-size:var(--next-prayer-font)!important; }
+        .swedish-text { display: block; font-size: 0.65em; color: #969fa3; margin-top: 5px; }
+        .countdown-container { background: rgba(25,35,40,0.5); border: 2px solid rgba(255,202,40,0); border-radius: 20px; padding: 15px 40px; text-align: center; backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-top: 20px; width: 45%; max-width: 1000px; min-width: 400px; transition: all 0.5s ease; }
+        .iqama-blink { animation: blinker 2.8s infinite; }
+        @keyframes blinker { 50% { background-color: rgba(1,0,0,0.5); } }
+        .bottom-center-logo { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 5; text-align: center; }
+        .ticker-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.3); display: flex; flex-direction: column; overflow: hidden; z-index: 50; box-shadow: 0 -2px 20px rgba(0,0,0,0.2); }
+        .ticker-row { display: flex; align-items: center; height: var(--ticker-height); overflow: hidden; }
+        .ticker-label { flex-shrink: 0; background: rgba(255,202,40,0.85); color: #1a1a1a; font-weight: bold; font-size: 1.1rem; padding: 0 20px; height: 100%; display: flex; align-items: center; white-space: nowrap; min-width: 110px; justify-content: center; }
+        .ticker-track { flex: 1; overflow: hidden; position: relative; height: var(--ticker-height); }
+        .ticker-inner { position: absolute; top: 0; left: 0; white-space: nowrap; font-size: var(--ticker-font); line-height: var(--ticker-height); text-shadow: 0 1px 4px rgba(0,0,0,0.5); will-change: transform; }
+    </style>
+<link rel="stylesheet" href="theme.css?v=20261005-1"></head>
+<body>
+
+    <div class="top-left-logo">
+        <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
+    </div>
+
+    <div id="prayer-overlay">
+        <h1 style="font-size:6rem;margin:0;text-align:center;">أقيمت الصلاة</h1>
+        <p style="font-size:3rem;text-align:center;">الرجاء إغلاق الهاتف</p>
+        <p style="font-size:1.5rem;color:#ccc;text-align:center;">Stäng av mobilen</p>
+    </div>
+
+    <div class="header-top">
+        <div style="display:flex;flex-direction:column;align-items:center;">
+            <div id="date-ar">---</div>
+            <div id="date-hijri" style="font-size:1.4rem;color:#ffca28;margin-top:5px;">---</div>
+        </div>
+        <div id="clock">00:00</div>
+        <div style="display:flex;flex-direction:column;align-items:center;">
+            <div id="date-se">---</div>
+            <div id="date-hijri-se" style="font-size:1.4rem;color:#ffca28;">---</div>
+        </div>
+    </div>
+
+    <div class="timer-wrapper">
+        <div class="countdown-container" id="timer-box" style="margin-top:0;flex:1;">
+            <div id="timer-label" style="font-size:1.8rem;color:#ccc;text-align:center;">
+                المتبقي للأذان <span class="swedish-text">Tid till Adhan</span>
+            </div>
+            <div class="countdown-time" id="timer">00:00:00</div>
+            <div id="timer-prayer-name" style="font-size:3rem;text-align:center;">---</div>
+        </div>
+    </div>
+
+    <div class="cards-and-side">
+        <div class="prayer-cards-container" id="prayer-cards">
+            <div class="prayer-row">
+                <div class="prayer-card" id="card-fajr">
+                    <div class="prayer-name">الفجر</div>
+                    <div class="swedish-name">Fajr</div>
+                    <div class="prayer-time" id="fajr-time">--:--</div>
+                    <div class="iqama-box">
+                        <span class="iqama-label">الإقامة Iqama</span>
+                        <span class="iqama-time" id="fajr-iqama">--:--</span>
+                    </div>
+                </div>
+                <div class="prayer-card" id="card-shuruq">
+                    <div class="prayer-name">الشروق</div>
+                    <div class="swedish-name">Shuruq</div>
+                    <div class="prayer-time" id="shuruq-time">--:--</div>
+                </div>
+                <div class="prayer-card" id="card-duhur">
+                    <div class="prayer-name">الظهر</div>
+                    <div class="swedish-name">Duhur</div>
+                    <div class="prayer-time" id="duhur-time">--:--</div>
+                    <div class="iqama-box">
+                        <span class="iqama-label">الإقامة Iqama</span>
+                        <span class="iqama-time" id="duhur-iqama">--:--</span>
+                    </div>
+                </div>
+            </div>
+            <div class="prayer-row">
+                <div class="prayer-card" id="card-asr">
+                    <div class="prayer-name">العصر</div>
+                    <div class="swedish-name">Asr</div>
+                    <div class="prayer-time" id="asr-time">--:--</div>
+                    <div class="iqama-box">
+                        <span class="iqama-label">الإقامة Iqama</span>
+                        <span class="iqama-time" id="asr-iqama">--:--</span>
+                    </div>
+                </div>
+                <div class="prayer-card" id="card-maghrib">
+                    <div class="prayer-name">المغرب</div>
+                    <div class="swedish-name">Maghrib</div>
+                    <div class="prayer-time" id="maghrib-time">--:--</div>
+                    <div class="iqama-box">
+                        <span class="iqama-label">الإقامة Iqama</span>
+                        <span class="iqama-time" id="maghrib-iqama">--:--</span>
+                    </div>
+                </div>
+                <div class="prayer-card" id="card-ishâ">
+                    <div class="prayer-name">العشاء</div>
+                    <div class="swedish-name">Ishâ</div>
+                    <div class="prayer-time" id="ishâ-time">--:--</div>
+                    <div class="iqama-box">
+                        <span class="iqama-label">الإقامة Iqama</span>
+                        <span class="iqama-time" id="ishâ-iqama">--:--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="left-side-cards" id="left-cards">
+        <div class="prayer-card" id="left-card-top">
+            <p style="margin:0;white-space:pre-line;"></p>
+        </div>
+        <div class="prayer-card" id="left-card-bottom" style="font-size:1.2rem;direction:ltr;text-align:left;">
+            <p style="margin:0;white-space:pre-line;"></p>
+        </div>
+    </div>
+
+    <div class="right-side-images" id="right-img-card">
+        <div class="prayer-card" style="flex:1;justify-content:center;align-items:center;padding:15px;gap:10px;">
+            <img src="logo.png" alt="4" onerror="this.style.display='none'">
+            <img src="swish.png" alt="5" onerror="this.style.display='none'">
+        </div>
+    </div>
+
+    <div class="ticker-bar">
+        <div class="ticker-row">
+            <div class="ticker-label">Säffle Moské</div>
+            <div class="ticker-track" id="track-ar">
+                <div class="ticker-inner" id="ticker-ar" style="color:#fff;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var arText = '';
+
+        function startTicker(elId, text, speed, dir) {
+            var el = document.getElementById(elId);
+            if (!el) return;
+            if (el._tickerFrame) cancelAnimationFrame(el._tickerFrame);
+            el.textContent = text + text;
+            var pos = 0, half = 0;
+            function measure() {
+                half = el.scrollWidth / 2;
+                if (half === 0) { setTimeout(measure, 100); return; }
+                pos = dir === 'ltr' ? -half : 0;
+                tick();
+            }
+            function tick() {
+                if (dir === 'ltr') { pos += speed; if (pos >= 0) pos = -half; }
+                else { pos -= speed; if (pos <= -half) pos = 0; }
+                el.style.transform = 'translateX(' + pos + 'px)';
+                el._tickerFrame = requestAnimationFrame(tick);
+            }
+            measure();
+        }
+        window.addEventListener('load', function() { startTicker('ticker-ar', arText, 1, 'ltr'); });
+    </script>
+
+    <script>
+                const prayerData = [];
+
+        const iqamaOffsets = { Fajr: 10, Duhur: 10, Asr: 10, Maghrib: 5, 'Ishâ': 10 };
+        const labels = {
+            Fajr:    { ar: "الفجر",  sv: "Fajr" },
+            Shuruq:  { ar: "الشروق", sv: "Shuruq" },
+            Duhur:   { ar: "الظهر",  sv: "Duhur" },
+            Asr:     { ar: "العصر",  sv: "Asr" },
+            Maghrib: { ar: "المغرب", sv: "Maghrib" },
+            'Ishâ':  { ar: "العشاء", sv: "Ishâ" }
+        };
+        let nextPrayerNameGlobal = "";
+
+        // ============================================================
+        // ★ دوال الفترة الصيفية (23 أبريل → 15 أغسطس)
+        // ============================================================
+
+        /** هل التاريخ المعطى يقع ضمن فترة الصيف؟ */
+        function isSummerPeriod(date) {
+            const m = date.getMonth() + 1; // 1-12
+            const d = date.getDate();
+            const afterApr24 = (m > 4) || (m === 4 && d >= 23);
+            const beforeAug15 = (m < 8) || (m === 8 && d <= 15);
+            return afterApr24 && beforeAug15;
+        }
+
+        /** أضف دقائق إلى نص وقت "HH:MM" وأرجع نصاً جديداً */
+        function addMinutes(timeStr, mins) {
+            const [h, m] = timeStr.split(':').map(Number);
+            const total = h * 60 + m + mins;
+            return String(Math.floor(total / 60) % 24).padStart(2, '0') + ':' +
+                   String(total % 60).padStart(2, '0');
+        }
+
+        /**
+         * أرجع بيانات اليوم مع تطبيق قواعد الصيف إن لزم:
+         *   - العشاء = المغرب + 60 دقيقة
+         *   - الفجر  = الشروق + 90 دقيقة
+         */
+        function getAdjustedTodayData() { return getTodayData(); }
+
+        /**
+         * أوفست الإقامة حسب الفترة:
+         *   الصيف  → فجر+15، مغرب+0، عشاء+0
+         *   عادي  → فجر+10، مغرب+5،  عشاء+10
+         */
+        function getIqamaOffsets() {
+            return isSummerPeriod(new Date())
+                ? { Fajr: 15, Duhur: 10, Asr: 10, Maghrib: 5, 'Ishâ': 5 }
+                : { Fajr: 10, Duhur: 10, Asr: 10, Maghrib: 5, 'Ishâ': 10 };
+        }
+
+        const remotePrayerKeys = { Fajr:'fajr', Duhur:'dhuhr', Asr:'asr', Maghrib:'maghrib', 'Ishâ':'isha' };
+        function getIqamaTime(day, prayer) {
+            const date = day.Datum.slice(0,10);
+            const rule = (window.alkhaleelIqamaRules || []).find(r =>
+                r.prayer === remotePrayerKeys[prayer] && r.valid_from <= date && r.valid_to >= date);
+            if (rule?.mode === 'fixed') return String(rule.value).slice(0,5);
+            const minutes = rule?.mode === 'offset' ? Number(rule.value) : 0;
+            return calculateIqamaTime(day[prayer], minutes);
+        }
+
+        function getTodayData() {
+            const now = new Date();
+            const s = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,'0') + "-" + String(now.getDate()).padStart(2,'0') + " 00:00:00";
+            return prayerData.find(d => d.Datum === s);
+        }
+
+        function parseDateTime(dateObj, timeStr) {
+            const [year, month, day] = dateObj.Datum.split(' ')[0].split('-');
+            const [hours, minutes] = timeStr.split(':');
+            return new Date(year, month - 1, day, hours, minutes, 0);
+        }
+
+        function calculateIqamaTime(timeStr, offsetMin) {
+            if (!timeStr || timeStr === "-") return "-";
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            const date = new Date();
+            date.setHours(hours, minutes + offsetMin, 0);
+            return date.getHours().toString().padStart(2,'0') + ":" + date.getMinutes().toString().padStart(2,'0');
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText =
+                now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false });
+
+            const optAr = { weekday:'long', day:'numeric', month:'long', year:'numeric' };
+            document.getElementById('date-ar').innerText =
+                now.toLocaleDateString('ar-EG', optAr);
+
+            const optHijAr = { calendar:'islamic-umalqura', day:'numeric', month:'long', year:'numeric' };
+            document.getElementById('date-hijri').innerText =
+                now.toLocaleDateString('ar-SA-u-nu-latn', optHijAr);
+
+            let sv = now.toLocaleDateString('sv-SE',
+                { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+            document.getElementById('date-se').innerText = sv.charAt(0).toUpperCase() + sv.slice(1);
+
+            let hijSv = now.toLocaleDateString('sv-SE',
+                { calendar:'islamic-umalqura', day:'numeric', month:'long', year:'numeric' });
+            document.getElementById('date-hijri-se').innerText =
+                hijSv.charAt(0).toUpperCase() + hijSv.slice(1);
+        }
+
+        // ============================================================
+        // تحديث البطاقات
+        // ============================================================
+
+
+        function renderTable() {
+            const times   = getAdjustedTodayData();
+            if (!times) return;
+
+            for (let key in labels) {
+                const id      = key.toLowerCase();
+                const timeEl  = document.getElementById(id + '-time');
+                const iqamaEl = document.getElementById(id + '-iqama');
+                const cardEl  = document.getElementById('card-' + id);
+
+                if (timeEl)  timeEl.innerText = times[key] || '--:--';
+
+                if (iqamaEl) {
+                    iqamaEl.innerText = (key === 'Shuruq') ? '-' : getIqamaTime(times, key);
+                }
+
+                if (cardEl) {
+                    cardEl.classList.remove('active-card');
+                    if (labels[key].ar === nextPrayerNameGlobal) {
+                        cardEl.classList.add('active-card');
+                    }
+                }
+            }
+        }
+
+        function updateTimer() {
+            const now     = new Date();
+            const todayData = getAdjustedTodayData();   // ← مُعدَّل
+            if (!todayData) return;
+
+            const prayers = [
+                { k:'Fajr',   n:labels.Fajr.ar,    t:todayData.Fajr,    sv:labels.Fajr.sv,    data:todayData },
+                { k:'Duhur',  n:labels.Duhur.ar,   t:todayData.Duhur,   sv:labels.Duhur.sv,   data:todayData },
+                { k:'Asr',    n:labels.Asr.ar,     t:todayData.Asr,     sv:labels.Asr.sv,     data:todayData },
+                { k:'Maghrib',n:labels.Maghrib.ar, t:todayData.Maghrib, sv:labels.Maghrib.sv, data:todayData },
+                { k:'Ishâ',   n:labels['Ishâ'].ar, t:todayData['Ishâ'], sv:labels['Ishâ'].sv, data:todayData }
+            ];
+
+            let target = null, nameAr = "", nameSv = "", mode = "";
+            const overlay = document.getElementById('prayer-overlay');
+
+            for (let p of prayers) {
+                const pTime    = parseDateTime(p.data, p.t);
+                let iTime = parseDateTime(p.data, getIqamaTime(p.data,p.k));
+                if (p.k === 'Ishâ' && iTime < pTime) iTime.setDate(iTime.getDate()+1);
+                const endGreen = new Date(iTime.getTime() + 5 * 60000);
+
+                if (now >= iTime && now < endGreen) { overlay.style.display = 'flex'; return; }
+                if (now < pTime) { target = pTime; nameAr = p.n; nameSv = p.sv; mode = "اذان";  break; }
+                if (now < iTime) { target = iTime; nameAr = p.n; nameSv = p.sv; mode = "اقامة"; break; }
+            }
+
+            // إذا انتهت صلوات اليوم → فجر الغد
+            if (!target) {
+                const tmr = new Date(); tmr.setDate(now.getDate() + 1);
+                const tStr = tmr.getFullYear() + "-" +
+                             String(tmr.getMonth()+1).padStart(2,'0') + "-" +
+                             String(tmr.getDate()).padStart(2,'0') + " 00:00:00";
+                const tData = prayerData.find(d => d.Datum === tStr);
+                if (tData) {
+                    target = parseDateTime(tData, tData.Fajr);
+                    nameAr = labels.Fajr.ar; nameSv = labels.Fajr.sv; mode = "اذان";
+                }
+            }
+
+            overlay.style.display = 'none';
+            if (target) {
+                nextPrayerNameGlobal = nameAr;
+                const diff = target - now;
+                const hh = String(Math.floor(diff / 3600000)).padStart(2,'0');
+                const mm = String(Math.floor((diff % 3600000) / 60000)).padStart(2,'0');
+                const ss = String(Math.floor((diff % 60000) / 1000)).padStart(2,'0');
+                document.getElementById('timer').innerText = `${hh}:${mm}:${ss}`;
+                document.getElementById('timer-label').innerHTML =
+                    (mode === "اذان" ? "المتبقي للأذان" : "المتبقي للإقامة") +
+                    ` <span class="swedish-text">${mode === "اذان" ? "Tid till Adhan" : "Tid till Iqama"}</span>`;
+                document.getElementById('timer-prayer-name').innerHTML =
+                    `${nameAr} <span class="swedish-text">${nameSv}</span>`;
+                document.getElementById('timer-box').className =
+                    "countdown-container" + (mode === "اقامة" ? " iqama-blink" : "");
+            }
+        }
+
+
+        setInterval(() => { updateClock(); updateTimer(); renderTable(); }, 1000);
+        updateClock(); updateTimer(); renderTable();
+
+        function positionRightCard() {
+            const timerBox = document.getElementById('timer-box');
+            const cardFajr = document.getElementById('card-fajr');
+            const cardAsr  = document.getElementById('card-asr');
+            const rightCard = document.getElementById('right-img-card');
+            if (!timerBox || !cardFajr || !cardAsr || !rightCard) return;
+            const tRect = timerBox.getBoundingClientRect();
+            const aRect = cardAsr.getBoundingClientRect();
+            const top = tRect.top + window.scrollY;
+            rightCard.style.top    = top + 'px';
+            rightCard.style.height = (aRect.bottom + window.scrollY - top) + 'px';
+        }
+        positionRightCard();
+        window.addEventListener('resize', positionRightCard);
+
+        function positionLeftCards() {
+            const timerBox  = document.getElementById('timer-box');
+            const cardAsr   = document.getElementById('card-asr');
+            const leftCards = document.getElementById('left-cards');
+            if (!timerBox || !cardAsr || !leftCards) return;
+            const tRect = timerBox.getBoundingClientRect();
+            const aRect = cardAsr.getBoundingClientRect();
+            const top = tRect.top + window.scrollY;
+            leftCards.style.top    = top + 'px';
+            leftCards.style.height = (aRect.bottom + window.scrollY - top) + 'px';
+        }
+        positionLeftCards();
+        window.addEventListener('resize', positionLeftCards);
+    </script>
+
+    <script src="../../config.js"></script>
+    <script src="screen-layout.js?v=20260923-2"></script>
+    <script src="remote-data.js?v=20261005-1"></script>
+</body>
+</html>

@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Säffle Moské — مواقيت مسجد الخليل</title>
+    <style>
+        :root { --logo-size:70px; --logo-x:10px; --logo-y:10px; --clock-font:48px; --date-font:16px; --countdown-font:80px; --countdown-label-font:17px; --next-prayer-font:32px; --prayer-name-font:20px; --swedish-name-font:12px; --prayer-time-font:18px; --iqama-label-font:10px; --iqama-time-font:16px; --header-offset:8px; --countdown-offset:12px; --cards-offset:12px; --cards-width:92%; --card-gap:8px; }
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh;
+            background: #0a2a2a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .portrait-wrapper {
+            position: relative;
+            width: 100vh;
+            height: 100vw;
+            background: url('3.png') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            transform: rotate(90deg);
+            transform-origin: center;
+        }
+
+        #prayer-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #004d00; z-index: 100; display: none;
+            flex-direction: column; justify-content: center; align-items: center; text-align: center;
+        }
+
+        .top-left-logo {
+            position: absolute;
+            bottom: var(--logo-y); left: var(--logo-x); z-index: 10;
+        }
+        .top-left-logo img { width: var(--logo-size); height: auto; filter: drop-shadow(0 0 8px rgba(0,0,0,0.7)); }
+
+        .header-top {
+            width: 92%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0 12px;
+            color: #fff;
+            background: transparent;
+            position: relative;
+            margin-top: var(--header-offset);
+        }
+        .header-top::after {
+            content: "";
+            position: absolute;
+            bottom: 0; left: 5%; width: 90%; height: 1.5px;
+            background: linear-gradient(to right, transparent, rgba(255,255,255,0.5), transparent);
+        }
+        #clock { font-size: var(--clock-font); font-weight: 700; text-align: center; line-height: 1; }
+        #date-ar, #date-se { font-size: var(--date-font); opacity: 0.9; }
+        #date-hijri, #date-hijri-se { font-size: 0.85rem; color: #ffca28; margin-top: 4px; }
+        .date-col { display: flex; flex-direction: column; align-items: center; }
+
+        /* NOTE: backdrop-filter (blur) removed for performance on low-power screens.
+           It was forcing the GPU to recomposite a blurred layer every second
+           (since the clock/timer text inside changes every second), which is
+           very expensive and caused the page to slow down / freeze over time.
+           Replaced with a plain, slightly darker semi-transparent background
+           to keep a similar look without the cost. */
+        .countdown-container {
+            background: rgba(15, 22, 26, 0.75);
+            border-radius: 16px;
+            padding: 14px 20px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            width: var(--cards-width);
+            margin-top: var(--countdown-offset);
+            transition: background-color 0.5s ease;
+        }
+        #timer-label { font-size: var(--countdown-label-font)!important; color: #ccc; }
+        .countdown-time {
+            font-size: var(--countdown-font);
+            font-weight: bold;
+            color: #ffca28;
+            font-family: sans-serif;
+            text-shadow: 0 0 20px rgba(255,202,40,0.3);
+            line-height: 1.1;
+        }
+        #timer-prayer-name { font-size: var(--next-prayer-font)!important; margin-top: 4px; }
+        .swedish-text { display: block; font-size: 0.6em; color: #969fa3; margin-top: 2px; }
+
+        .prayer-cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: var(--card-gap);
+            width: var(--cards-width);
+            margin-top: var(--cards-offset);
+            padding-bottom: 12px;
+        }
+        .prayer-row {
+            display: flex;
+            gap: var(--card-gap);
+            width: 100%;
+        }
+        .prayer-card {
+            background: rgba(15, 22, 26, 0.7);
+            border-radius: 14px;
+            padding: 10px 6px;
+            flex: 1;
+            aspect-ratio: 1 / 1;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: background-color 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        .prayer-name { color: #fff; font-size: var(--prayer-name-font); font-weight: bold; margin-bottom: 2px; }
+        .swedish-name { color: #aaa; font-size: var(--swedish-name-font); margin-bottom: 6px; text-transform: capitalize; }
+        .prayer-time { color: #fff; font-size: var(--prayer-time-font); font-weight: bold; margin-bottom: 8px; }
+
+        .iqama-box {
+            background: rgba(255, 202, 40, 0.1);
+            border: 1px solid rgba(255, 202, 40, 0.3);
+            padding: 5px 4px;
+            border-radius: 8px;
+            margin-top: auto;
+        }
+        .iqama-label { color: #ffca28; font-size: var(--iqama-label-font); display: block; opacity: 0.8; }
+        .iqama-time { color: #ffca28; font-size: var(--iqama-time-font); font-weight: bold; }
+
+        .active-card {
+            border: 2px solid #ffca28 !important;
+            box-shadow: 0 0 20px rgba(255, 202, 40, 0.5);
+            transform: translateY(-4px);
+            background: rgba(40, 50, 55, 0.85) !important;
+        }
+
+        .iqama-blink { animation: blinker 2.8s infinite; }
+        @keyframes blinker { 50% { background-color: rgba(1, 0, 0, 0.5); } }
+    </style>
+<link rel="stylesheet" href="theme.css?v=20261005-1"></head>
+<body>
+<div class="portrait-wrapper">
+
+    <div class="top-left-logo">
+        <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
+    </div>
+
+    <div id="prayer-overlay">
+        <h1 style="font-size: 4rem; margin: 0; text-align: center;">أقيمت الصلاة</h1>
+        <p style="font-size: 2rem; text-align: center;">الرجاء إغلاق الهاتف</p>
+        <p style="font-size: 1.2rem; color: #ccc; text-align: center;">Stäng av mobilen</p>
+    </div>
+
+    <div class="header-top">
+        <div class="date-col">
+            <div id="date-ar">---</div>
+            <div id="date-hijri">---</div>
+        </div>
+        <div id="clock">00:00</div>
+        <div class="date-col">
+            <div id="date-se">---</div>
+            <div id="date-hijri-se">---</div>
+        </div>
+    </div>
+
+    <div class="countdown-container" id="timer-box">
+        <div id="timer-label">المتبقي للأذان <span class="swedish-text">Tid till Adhan</span></div>
+        <div class="countdown-time" id="timer">00:00:00</div>
+        <div id="timer-prayer-name" style="font-size: 2rem; text-align: center;">---</div>
+    </div>
+
+    <div class="prayer-cards-container" id="prayer-cards">
+        <div class="prayer-row">
+            <div class="prayer-card" id="card-fajr">
+                <div class="prayer-name">الفجر</div>
+                <div class="swedish-name">Fajr</div>
+                <div class="prayer-time" id="fajr-time">--:--</div>
+                <div class="iqama-box">
+                    <span class="iqama-label">الإقامة Iqama</span>
+                    <span class="iqama-time" id="fajr-iqama">--:--</span>
+                </div>
+            </div>
+            <div class="prayer-card" id="card-shuruq">
+                <div class="prayer-name">الشروق</div>
+                <div class="swedish-name">Shuruq</div>
+                <div class="prayer-time" id="shuruq-time">--:--</div>
+            </div>
+            <div class="prayer-card" id="card-duhur">
+                <div class="prayer-name">الظهر</div>
+                <div class="swedish-name">Duhur</div>
+                <div class="prayer-time" id="duhur-time">--:--</div>
+                <div class="iqama-box">
+                    <span class="iqama-label">الإقامة Iqama</span>
+                    <span class="iqama-time" id="duhur-iqama">--:--</span>
+                </div>
+            </div>
+        </div>
+        <div class="prayer-row">
+            <div class="prayer-card" id="card-asr">
+                <div class="prayer-name">العصر</div>
+                <div class="swedish-name">Asr</div>
+                <div class="prayer-time" id="asr-time">--:--</div>
+                <div class="iqama-box">
+                    <span class="iqama-label">الإقامة Iqama</span>
+                    <span class="iqama-time" id="asr-iqama">--:--</span>
+                </div>
+            </div>
+            <div class="prayer-card" id="card-maghrib">
+                <div class="prayer-name">المغرب</div>
+                <div class="swedish-name">Maghrib</div>
+                <div class="prayer-time" id="maghrib-time">--:--</div>
+                <div class="iqama-box">
+                    <span class="iqama-label">الإقامة Iqama</span>
+                    <span class="iqama-time" id="maghrib-iqama">--:--</span>
+                </div>
+            </div>
+            <div class="prayer-card" id="card-isha">
+                <div class="prayer-name">العشاء</div>
+                <div class="swedish-name">Ishâ</div>
+                <div class="prayer-time" id="isha-time">--:--</div>
+                <div class="iqama-box">
+                    <span class="iqama-label">الإقامة Iqama</span>
+                    <span class="iqama-time" id="isha-iqama">--:--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const prayerData = [];
+
+        function isSummerPeriod(date) {
+            const m = date.getMonth() + 1;
+            const d = date.getDate();
+            const afterApr24 = (m > 4) || (m === 4 && d >= 23);
+            const beforeAug15 = (m < 8) || (m === 8 && d <= 15);
+            return afterApr24 && beforeAug15;
+        }
+
+        function addMinutes(timeStr, mins) {
+            const [h, m] = timeStr.split(':').map(Number);
+            const total = h * 60 + m + mins;
+            return String(Math.floor(total / 60) % 24).padStart(2, '0') + ':' +
+                   String(total % 60).padStart(2, '0');
+        }
+
+        function getAdjustedTodayData() { return getTodayData(); }
+
+
+        function getIqamaOffsets() {
+            return isSummerPeriod(new Date())
+                ? { Fajr: 15, Duhur: 10, Asr: 10, Maghrib: 5, 'Ishâ': 5 }
+                : { Fajr: 10, Duhur: 10, Asr: 10, Maghrib: 5, 'Ishâ': 10 };
+        }
+
+        const labels = {
+            Fajr:    { ar: "الفجر",    sv: "Fajr" },
+            Shuruq:  { ar: "الشروق",   sv: "Shuruq" },
+            Duhur:   { ar: "الظهر",    sv: "Duhur" },
+            Asr:     { ar: "العصر",    sv: "Asr" },
+            Maghrib: { ar: "المغرب",   sv: "Maghrib" },
+            'Ishâ':  { ar: "العشاء",   sv: "Ishâ" }
+        };
+
+        let nextPrayerNameGlobal = "";
+
+        function getTodayData() {
+            const now = new Date();
+            const s = now.getFullYear() + "-" +
+                      String(now.getMonth()+1).padStart(2,'0') + "-" +
+                      String(now.getDate()).padStart(2,'0') + " 00:00:00";
+            return prayerData.find(d => d.Datum === s);
+        }
+
+        function parseDateTime(dayObj, timeStr) {
+            const [y, mo, da] = dayObj.Datum.split(' ')[0].split('-');
+            const [h, mi] = timeStr.split(':');
+            return new Date(y, mo-1, da, h, mi, 0);
+        }
+
+        function calculateIqamaTime(timeStr, offsetMin) {
+            if (!timeStr || timeStr === "-") return "-";
+            const [h, m] = timeStr.split(':').map(Number);
+            const d = new Date();
+            d.setHours(h, m + offsetMin, 0);
+            return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+        }
+
+        /* PERFORMANCE FIX: Intl.DateTimeFormat objects are expensive to construct
+           (especially with a non-Gregorian calendar like islamic-umalqura).
+           The old code called toLocaleDateString(...) fresh every second, which
+           creates a brand new formatter internally every single time. On a slow
+           device this adds up over hours and contributes to the freeze.
+           Here we build each formatter ONCE and just call .format(now) every tick. */
+        const fmtDateAr  = new Intl.DateTimeFormat('ar-EG', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+        const fmtHijriAr = new Intl.DateTimeFormat('ar-SA-u-nu-latn', { calendar:'islamic-umalqura', day:'numeric', month:'long', year:'numeric' });
+        const fmtDateSe  = new Intl.DateTimeFormat('sv-SE', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+        const fmtHijriSe = new Intl.DateTimeFormat('sv-SE', { calendar:'islamic-umalqura', day:'numeric', month:'long', year:'numeric' });
+        const fmtClock   = new Intl.DateTimeFormat('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false });
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = fmtClock.format(now);
+
+            document.getElementById('date-ar').innerText = fmtDateAr.format(now);
+            document.getElementById('date-hijri').innerText = fmtHijriAr.format(now);
+
+            let sv = fmtDateSe.format(now);
+            document.getElementById('date-se').innerText = sv.charAt(0).toUpperCase() + sv.slice(1);
+
+            let hijSv = fmtHijriSe.format(now);
+            document.getElementById('date-hijri-se').innerText = hijSv.charAt(0).toUpperCase() + hijSv.slice(1);
+        }
+
+        function keyToId(key) {
+            return key.replace('â', 'a').toLowerCase();
+        }
+
+        function getIqamaTime(day, prayer) {
+ const key={Fajr:'fajr',Duhur:'dhuhr',Asr:'asr',Maghrib:'maghrib','Ishâ':'isha'}[prayer];
+ const date=day.Datum.slice(0,10);
+ const rule=(window.alkhaleelIqamaRules||[]).find(r=>r.prayer===key&&r.valid_from<=date&&r.valid_to>=date);
+ if(rule?.mode==='fixed')return String(rule.value).slice(0,5);
+ return calculateIqamaTime(day[prayer],rule?.mode==='offset'?Number(rule.value):0);
+}
+function renderTable() {
+            const times   = getAdjustedTodayData();
+            const offsets = getIqamaOffsets();
+            if (!times) return;
+
+            for (let key in labels) {
+                const id      = keyToId(key);
+                const timeEl  = document.getElementById(`${id}-time`);
+                const iqamaEl = document.getElementById(`${id}-iqama`);
+                const cardEl  = document.getElementById(`card-${id}`);
+
+                if (timeEl)  timeEl.innerText = times[key] || '--:--';
+
+                if (iqamaEl) {
+                    iqamaEl.innerText = (key === 'Shuruq')
+                        ? '-'
+                        : getIqamaTime(times,key);
+                }
+
+                if (cardEl) {
+                    cardEl.classList.toggle('active-card', labels[key].ar === nextPrayerNameGlobal);
+                }
+            }
+        }
+
+        function updateTimer() {
+            const now     = new Date();
+            const todayData = getAdjustedTodayData();
+            const offsets   = getIqamaOffsets();
+            if (!todayData) return;
+
+            const prayers = [
+                { n: labels.Fajr.ar,    t: todayData.Fajr,    i: offsets.Fajr,    sv: labels.Fajr.sv,    data: todayData },
+                { n: labels.Duhur.ar,   t: todayData.Duhur,   i: offsets.Duhur,   sv: labels.Duhur.sv,   data: todayData },
+                { n: labels.Asr.ar,     t: todayData.Asr,     i: offsets.Asr,     sv: labels.Asr.sv,     data: todayData },
+                { n: labels.Maghrib.ar, t: todayData.Maghrib, i: offsets.Maghrib, sv: labels.Maghrib.sv, data: todayData },
+                { n: labels['Ishâ'].ar, t: todayData['Ishâ'], i: offsets['Ishâ'], sv: labels['Ishâ'].sv, data: todayData }
+            ];
+
+            let target = null, nameAr = "", nameSv = "", mode = "";
+            const overlay = document.getElementById('prayer-overlay');
+
+            for (let p of prayers) {
+                const pTime    = parseDateTime(p.data, p.t);
+                const iTime    = parseDateTime(p.data,getIqamaTime(p.data,Object.keys(labels).find(k=>labels[k].ar===p.n)));
+                const endGreen = new Date(iTime.getTime() + 5 * 60000);
+
+                if (now >= iTime && now < endGreen) { overlay.style.display = 'flex'; return; }
+                if (now < pTime) { target = pTime; nameAr = p.n; nameSv = p.sv; mode = "اذان";  break; }
+                if (now < iTime) { target = iTime; nameAr = p.n; nameSv = p.sv; mode = "اقامة"; break; }
+            }
+
+            if (!target) {
+                const tmr = new Date(); tmr.setDate(now.getDate() + 1);
+                const tStr = tmr.getFullYear() + "-" +
+                             String(tmr.getMonth()+1).padStart(2,'0') + "-" +
+                             String(tmr.getDate()).padStart(2,'0') + " 00:00:00";
+                const tData = prayerData.find(d => d.Datum === tStr);
+                if (tData) {
+                    const adjTmr = tData;
+                    target = parseDateTime(adjTmr, adjTmr.Fajr);
+                    nameAr = labels.Fajr.ar; nameSv = labels.Fajr.sv; mode = "اذان";
+                }
+            }
+
+            overlay.style.display = 'none';
+            if (target) {
+                nextPrayerNameGlobal = nameAr;
+                const diff = target - now;
+                const hh = String(Math.floor(diff / 3600000)).padStart(2,'0');
+                const mm = String(Math.floor((diff % 3600000) / 60000)).padStart(2,'0');
+                const ss = String(Math.floor((diff % 60000) / 1000)).padStart(2,'0');
+                document.getElementById('timer').innerText = `${hh}:${mm}:${ss}`;
+                document.getElementById('timer-label').innerHTML =
+                    (mode === "اذان" ? "المتبقي للأذان" : "المتبقي للإقامة") +
+                    ` <span class="swedish-text">${mode === "اذان" ? "Tid till Adhan" : "Tid till Iqama"}</span>`;
+                document.getElementById('timer-prayer-name').innerHTML =
+                    `${nameAr} <span class="swedish-text">${nameSv}</span>`;
+                document.getElementById('timer-box').className =
+                    "countdown-container" + (mode === "اقامة" ? " iqama-blink" : "");
+            }
+        }
+
+        setInterval(() => { updateClock(); updateTimer(); renderTable(); }, 1000);
+        updateClock(); updateTimer(); renderTable();
+
+        /* RELIABILITY FIX: auto-reload the page periodically.
+           On screens that run 24/7 for weeks, even small memory/GPU leaks
+           (fonts, layers, browser quirks) can eventually freeze the tab.
+           A full page reload every few hours is a cheap safety net that
+           guarantees the screen recovers on its own without anyone having
+           to walk over and restart it manually. Adjust RELOAD_HOURS as needed. */
+        const RELOAD_HOURS = 4;
+        setTimeout(() => { location.reload(); }, RELOAD_HOURS * 60 * 60 * 1000);
+    </script>
+
+    
+    <script src="../../config.js"></script>
+    <script src="screen-layout.js?v=20260923-2"></script>
+</div>
+<script src="remote-data.js?v=20261005-1"></script></body>
+</html>
