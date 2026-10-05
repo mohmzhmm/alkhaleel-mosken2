@@ -180,17 +180,22 @@ Ur boken:
             var el = document.getElementById(elId);
             if (!el) return;
             if (el._tickerFrame) cancelAnimationFrame(el._tickerFrame);
+            if (el._tickerMeasure) clearTimeout(el._tickerMeasure);
+            if (!String(text || '').trim()) { el.textContent = ''; el.style.transform = ''; return; }
             el.textContent = text + text;
-            var pos = 0, half = 0;
+            var pos = 0, half = 0, lastTick = 0;
             function measure() {
                 half = el.scrollWidth / 2;
-                if (half === 0) { setTimeout(measure, 100); return; }
+                if (half === 0) { el._tickerMeasure = setTimeout(measure, 100); return; }
                 pos = dir === 'ltr' ? -half : 0;
                 tick();
             }
-            function tick() {
-                if (dir === 'ltr') { pos += speed; if (pos >= 0) pos = -half; }
-                else { pos -= speed; if (pos <= -half) pos = 0; }
+            function tick(timestamp) {
+                if (document.hidden) { lastTick = 0; el._tickerFrame = requestAnimationFrame(tick); return; }
+                const step = lastTick && timestamp ? Math.min((timestamp - lastTick) / 16.6667, 3) : 1;
+                lastTick = timestamp || 0;
+                if (dir === 'ltr') { pos += speed * step; if (pos >= 0) pos = -half; }
+                else { pos -= speed * step; if (pos <= -half) pos = 0; }
                 el.style.transform = 'translateX(' + pos + 'px)';
                 el._tickerFrame = requestAnimationFrame(tick);
             }
@@ -655,8 +660,12 @@ Ur boken:
             return date.getHours().toString().padStart(2,'0') + ":" + date.getMinutes().toString().padStart(2,'0');
         }
 
+        let lastClockMinute = '';
         function updateClock() {
             const now = new Date();
+            const minuteKey = Math.floor(now.getTime() / 60000);
+            if (lastClockMinute === minuteKey) return;
+            lastClockMinute = minuteKey;
             document.getElementById('clock').innerText =
                 now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', hour12:false });
 
@@ -683,6 +692,16 @@ Ur boken:
         // ============================================================
 
 
+        const screenValueCache = new WeakMap();
+        function writeScreenValue(element, property, value) {
+            if (!element) return;
+            let values = screenValueCache.get(element);
+            if (!values) { values = {}; screenValueCache.set(element, values); }
+            if (values[property] === value) return;
+            values[property] = value;
+            element[property] = value;
+        }
+
         function renderTable() {
             const times   = getAdjustedTodayData();
             if (!times) return;
@@ -693,16 +712,16 @@ Ur boken:
                 const iqamaEl = document.getElementById(id + '-iqama');
                 const cardEl  = document.getElementById('card-' + id);
 
-                if (timeEl)  timeEl.innerText = times[key] || '--:--';
+                writeScreenValue(timeEl, 'textContent', times[key] || '--:--');
 
                 if (iqamaEl) {
-                    iqamaEl.innerText = (key === 'Shuruq') ? '-' : getIqamaTime(times, key);
+                    writeScreenValue(iqamaEl, 'textContent', (key === 'Shuruq') ? '-' : getIqamaTime(times, key));
                 }
 
                 if (cardEl) {
-                    cardEl.classList.remove('active-card');
-                    if (labels[key].ar === nextPrayerNameGlobal) {
-                        cardEl.classList.add('active-card');
+                    const active = labels[key].ar === nextPrayerNameGlobal;
+                    if (cardEl.classList.contains('active-card') !== active) {
+                        cardEl.classList.toggle('active-card', active);
                     }
                 }
             }
@@ -755,14 +774,11 @@ Ur boken:
                 const hh = String(Math.floor(diff / 3600000)).padStart(2,'0');
                 const mm = String(Math.floor((diff % 3600000) / 60000)).padStart(2,'0');
                 const ss = String(Math.floor((diff % 60000) / 1000)).padStart(2,'0');
-                document.getElementById('timer').innerText = `${hh}:${mm}:${ss}`;
-                document.getElementById('timer-label').innerHTML =
-                    (mode === "اذان" ? "المتبقي للأذان" : "المتبقي للإقامة") +
-                    ` <span class="swedish-text">${mode === "اذان" ? "Tid till Adhan" : "Tid till Iqama"}</span>`;
-                document.getElementById('timer-prayer-name').innerHTML =
-                    `${nameAr} <span class="swedish-text">${nameSv}</span>`;
-                document.getElementById('timer-box').className =
-                    "countdown-container" + (mode === "اقامة" ? " iqama-blink" : "");
+                writeScreenValue(document.getElementById('timer'), 'textContent', `${hh}:${mm}:${ss}`);
+                writeScreenValue(document.getElementById('timer-label'), 'innerHTML', (mode === "اذان" ? "المتبقي للأذان" : "المتبقي للإقامة") +
+                    ` <span class="swedish-text">${mode === "اذان" ? "Tid till Adhan" : "Tid till Iqama"}</span>`);
+                writeScreenValue(document.getElementById('timer-prayer-name'), 'innerHTML', `${nameAr} <span class="swedish-text">${nameSv}</span>`);
+                writeScreenValue(document.getElementById('timer-box'), 'className', "countdown-container" + (mode === "اقامة" ? " iqama-blink" : ""));
             }
         }
 
@@ -802,6 +818,7 @@ Ur boken:
 
     <script src="config.js"></script>
     <script src="screen-layout.js?v=20260923-2"></script>
-    <script src="remote-data.js"></scri<script src="remote-data.js?v=20261005-1"></script>pt>
+    <script src="remote-data.js?v=20261005-1"></script>
 </body>
 </html>
+
