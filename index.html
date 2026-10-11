@@ -60,6 +60,10 @@
         .iqama-blink {animation:none;border-color:#ffca28;}
         @keyframes ticker-ltr { from { transform: translateX(-50%); } to { transform: translateX(0); } }
         @keyframes ticker-rtl { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .timer-row { display: flex; align-items: center; justify-content: center; gap: 20px; }
+        .no-phone { display: none; height: calc(var(--countdown-font) * 1.1); width: auto; }
+        .iqama-blink .no-phone { display: block; animation: no-phone-blink 2.5s ease-in-out infinite alternate; }
+        @keyframes no-phone-blink { from { opacity: 1; } to { opacity: 0.2; } }
     </style>
 </head>
 <body>
@@ -91,7 +95,7 @@
             <div id="timer-label" style="font-size:1.8rem;color:#ccc;text-align:center;">
                 المتبقي للأذان <span class="swedish-text">Tid till Adhan</span>
             </div>
-            <div class="countdown-time" id="timer">00:00:00</div>
+            <div class="timer-row"><img class="no-phone" src="no-phone.png" alt=""><div class="countdown-time" id="timer">00:00:00</div><img class="no-phone" src="no-phone.png" alt=""></div>
             <div id="timer-prayer-name" style="font-size:3rem;text-align:center;">---</div>
         </div>
     </div>
