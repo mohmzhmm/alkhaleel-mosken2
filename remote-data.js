@@ -89,9 +89,9 @@
         const sv=document.querySelector('#left-card-bottom p');
         const label=document.querySelector('.ticker-label');
 
-        if(ar)ar.textContent=content.news_ar||'';
-        if(sv)sv.textContent=content.news_sv||'';
-        if(label)label.textContent=content.ticker_label||'';
+        if(ar && ar.textContent !== (content.news_ar||''))ar.textContent=content.news_ar||'';
+        if(sv && sv.textContent !== (content.news_sv||''))sv.textContent=content.news_sv||'';
+        if(label && label.textContent !== (content.ticker_label||''))label.textContent=content.ticker_label||'';
 
         if(typeof startTicker==='function'){
           startTicker(
@@ -113,3 +113,4 @@
   refresh();
   setInterval(refresh,60000);
 })();
+

@@ -44,6 +44,20 @@
         .ticker-label { flex-shrink: 0; background: rgba(255,202,40,0.85); color: #1a1a1a; font-weight: bold; font-size: 1.1rem; padding: 0 20px; height: 100%; display: flex; align-items: center; white-space: nowrap; min-width: 110px; justify-content: center; }
         .ticker-track { flex: 1; overflow: hidden; position: relative; height: var(--ticker-height); }
         .ticker-inner { position: absolute; top: 0; left: 0; white-space: nowrap; font-size: var(--ticker-font); line-height: var(--ticker-height); text-shadow: 0 1px 4px rgba(0,0,0,0.5); will-change: transform; }
+
+        /* Lightweight rendering: keep the layout, use solid translucent panels. */
+        .prayer-card,.countdown-container,.ticker-bar {
+            backdrop-filter:none!important;
+            -webkit-backdrop-filter:none!important;
+            box-shadow:none!important;
+            transition:none!important;
+        }
+        .prayer-card,.countdown-container {background:rgba(25,35,40,.90);}
+        .active-card {background:rgba(40,50,55,.96)!important;}
+        .ticker-bar {background:rgba(36,60,66,.96);}
+        .top-left-logo img {filter:none;}
+        .countdown-time,.ticker-inner {text-shadow:none;}
+        .iqama-blink {animation:none;border-color:#ffca28;}
     </style>
 </head>
 <body>
@@ -179,6 +193,9 @@ Ur boken:
         function startTicker(elId, text, speed, dir) {
             var el = document.getElementById(elId);
             if (!el) return;
+            const tickerKey = JSON.stringify([text, speed, dir]);
+            if (el._tickerKey === tickerKey) return;
+            el._tickerKey = tickerKey;
             if (el._tickerFrame) cancelAnimationFrame(el._tickerFrame);
             if (el._tickerMeasure) clearTimeout(el._tickerMeasure);
             if (!String(text || '').trim()) { el.textContent = ''; el.style.transform = ''; return; }
@@ -192,6 +209,7 @@ Ur boken:
             }
             function tick(timestamp) {
                 if (document.hidden) { lastTick = 0; el._tickerFrame = requestAnimationFrame(tick); return; }
+                if (lastTick && timestamp && timestamp - lastTick < 33.333) { el._tickerFrame = requestAnimationFrame(tick); return; }
                 const step = lastTick && timestamp ? Math.min((timestamp - lastTick) / 16.6667, 3) : 1;
                 lastTick = timestamp || 0;
                 if (dir === 'ltr') { pos += speed * step; if (pos >= 0) pos = -half; }
@@ -818,7 +836,8 @@ Ur boken:
 
     <script src="config.js"></script>
     <script src="screen-layout.js?v=20260923-2"></script>
-    <script src="remote-data.js?v=20261005-1"></script>
+    <script src="remote-data.js?v=20261011-light-1"></script>
 </body>
 </html>
+
 
